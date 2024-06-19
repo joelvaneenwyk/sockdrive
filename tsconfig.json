@@ -3,7 +3,7 @@
     "outDir": "dist/",
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2020", "ESNext", "DOM"],
+    "lib": ["ESNext", "DOM"],
     "esModuleInterop": true,
     "module": "NodeNext",
     "noFallthroughCasesInSwitch": true,
@@ -18,6 +18,11 @@
     "jsx": "react",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "NodeNext"
-  }
+    "moduleResolution": "NodeNext",
+    "paths": {
+      "@sockdrive/*": ["./src/sockdrive/*"],
+      "@fatfs/*": ["./src/fatfs/*"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"],
 }

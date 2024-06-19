@@ -1,5 +1,5 @@
-import { EmModule, Handle, Ptr, Stats } from "./sockdrive/types";
-import { Drive } from "./sockdrive/drive";
+import { Drive } from "@sockdrive/drive";
+import { EmModule, Handle, Ptr, Stats } from "@sockdrive/types";
 
 interface Template {
     name: string;

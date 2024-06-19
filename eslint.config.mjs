@@ -19,11 +19,6 @@ export default tseslint.config(
                 ...globals.worker,
                 fetch: true,
             },
-            parserOptions: {
-                ecmaFeatures: {
-                    impliedStrict: true,
-                },
-            },
         },
 
         rules: {
