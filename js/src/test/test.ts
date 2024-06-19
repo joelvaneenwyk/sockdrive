@@ -1,3 +1,4 @@
+import { assert } from "chai";
 import { FileSystem, FileSystemApi, CreateFileSystemApi, Driver, CreateSockdriveFileSystem } from "../sockdrive-fat";
 import { Drive } from "../sockdrive/drive";
 import { EmModule, Stats } from "../sockdrive/types";
@@ -9,18 +10,17 @@ const baseDir = "/test";
 const file = baseDir + "/Simple File.txt";
 
 async function runTests() {
-    const assert = chai.assert;
     function createDriver(orig: Uint8Array): Driver {
         const image = orig.slice(0, orig.length);
         const sectorSize = 512;
         return {
             sectorSize,
             numSectors: image.length / 512,
-            readSectors: function(sector, dst, cb) {
+            readSectors: function (sector, dst, cb) {
                 dst.set(image.slice(sector * sectorSize, sector * sectorSize + dst.length));
                 cb(null, dst);
             },
-            writeSectors: function(sector, data, cb) {
+            writeSectors: function (sector, data, cb) {
                 image.set(data, sector * sectorSize);
                 cb(null);
             },
@@ -71,16 +71,17 @@ async function runTests() {
 
     for (const name of Object.keys(images)) {
         const driver = () => createDriver(images[name]);
-        const fs = () => new Promise<FileSystemApi>((resolve, reject) => {
-            const fs = createFileSystem(driver(), {}, (ev, reason) => {
-                if (ev === "ready") {
-                    resolve(fs);
-                } else {
-                    console.error(ev, reason);
-                    reject(reason);
-                }
+        const fs = () =>
+            new Promise<FileSystemApi>((resolve, reject) => {
+                const fs = createFileSystem(driver(), {}, (ev, reason) => {
+                    if (ev === "ready") {
+                        resolve(fs);
+                    } else {
+                        console.error(ev, reason);
+                        reject(reason);
+                    }
+                });
             });
-        });
         suite(name + ".driver");
 
         test("create driver", () => {
@@ -97,10 +98,17 @@ async function runTests() {
 
         testFs("api", async (fs) => {
             for (const method of [
-                "mkdir", "readdir",
+                "mkdir",
+                "readdir",
                 // "rename", "unlink", "rmdir",
-                "fclose", "fopen", "fwrite", "fread", "fstat",
-                "stat", "exists", "isdir",
+                "fclose",
+                "fopen",
+                "fwrite",
+                "fread",
+                "fstat",
+                "stat",
+                "exists",
+                "isdir",
                 // "fsync",
                 // "ftruncate", "truncate",
                 // "readFile", "writeFile", "appendFile",
@@ -114,7 +122,7 @@ async function runTests() {
                 // 'watchfile','unwatchfile','watch'
             ]) {
                 assert.ok(method in fs, "fs." + method + " has implementation.");
-            };
+            }
         });
 
         testFs("readdir", async (fs) => {
@@ -141,9 +149,11 @@ async function runTests() {
 
     suite("Drive 127.0.0.1:8001");
 
-    const testDrive = (name: string,
+    const testDrive = (
+        name: string,
         fn: (drive: Drive, module: EmModule, stats: Stats, preloadQueue: number[]) => Promise<void>,
-        preload = false) => {
+        preload = false
+    ) => {
         test(name, async () => {
             const module: EmModule = {
                 HEAPU8: new Uint8Array(512),
@@ -205,67 +215,84 @@ async function runTests() {
             assert.equal(i + 1, stats.cacheHit, "cache hit");
             assert.equal(1, stats.cacheMiss, "cache miss");
             if (i == 62) {
-                assert.deepEqual(module.HEAPU8.slice(0, 10),
-                    new Uint8Array([235, 88, 144, 77, 83, 87, 73, 78, 52, 46]));
+                assert.deepEqual(
+                    module.HEAPU8.slice(0, 10),
+                    new Uint8Array([235, 88, 144, 77, 83, 87, 73, 78, 52, 46])
+                );
             }
             if (i == 127) {
-                assert.deepEqual(module.HEAPU8.slice(0, 10),
-                    new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+                assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
             }
         }
     });
 
-    testDrive("preload sectors", async (drive, module, stats, preloadQueue) => {
-        assert.ok(preloadQueue.length >= 2);
-        let _0 = false;
-        let _8192 = false;
-        for (const next of preloadQueue) {
-            _0 = _0 || next === 0;
-            _8192 = _8192 || next === 8192;
-        }
-        assert.ok(_0 && _8192);
+    testDrive(
+        "preload sectors",
+        async (drive, module, stats, preloadQueue) => {
+            assert.ok(preloadQueue.length >= 2);
+            let _0 = false;
+            let _8192 = false;
+            for (const next of preloadQueue) {
+                _0 = _0 || next === 0;
+                _8192 = _8192 || next === 8192;
+            }
+            assert.ok(_0 && _8192);
 
-        await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+            await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
-        assert.equal(drive.read(0, 0, true), 0, "sector 0 in cache");
-        assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([51, 192, 142, 208, 188, 0, 124, 251, 80, 7]));
+            assert.equal(drive.read(0, 0, true), 0, "sector 0 in cache");
+            assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([51, 192, 142, 208, 188, 0, 124, 251, 80, 7]));
 
-        assert.equal(await drive.read(8192, 0, true), 0, "sector 8192 in cache");
-        assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+            assert.equal(await drive.read(8192, 0, true), 0, "sector 8192 in cache");
+            assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
 
-        assert.equal(await drive.read(8448, 0, true), 0, "sector 8448 in cache");
-        assert.deepEqual(module.HEAPU8.slice(256, 256 + 10), new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+            assert.equal(await drive.read(8448, 0, true), 0, "sector 8448 in cache");
+            assert.deepEqual(module.HEAPU8.slice(256, 256 + 10), new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
 
-        assert.equal(3, stats.cacheHit, "cache hit");
-        assert.equal(0, stats.cacheMiss, "cache miss");
-    }, true);
+            assert.equal(3, stats.cacheHit, "cache hit");
+            assert.equal(0, stats.cacheMiss, "cache miss");
+        },
+        true
+    );
 
     suite("sockdrive 127.0.0.1:8001");
 
     test("error on wrong drive name", (done) => {
-        createSockdriveFileSystem("ws://127.0.0.1:8001", "system", "not-exists", "",
-            () => { },
+        createSockdriveFileSystem(
+            "ws://127.0.0.1:8001",
+            "system",
+            "not-exists",
+            "",
+            () => {},
             (e) => {
                 assert.strictEqual(e.message, "Err: no such drive");
                 done();
-            });
+            }
+        );
     });
 
     const testSd = (name: string, fn: (fs: FileSystem) => Promise<void>, writeCheck?: number[]) => {
         test(name, async () => {
-            const { stats, fs, close } = await createSockdriveFileSystem("ws://127.0.0.1:8001", "system", "test", "",
+            const { stats, fs, close } = await createSockdriveFileSystem(
+                "ws://127.0.0.1:8001",
+                "system",
+                "test",
+                "",
                 (read, write) => {
                     assert.isTrue(read, "read access");
                     assert.isTrue(write, "write access");
-                });
+                }
+            );
             await fn(fs);
             await new Promise<void>((resolve) => {
                 setTimeout(resolve, 16);
             });
             await close();
             if (writeCheck) {
-                assert.isTrue(writeCheck.findIndex((v) => v === stats.write) >= 0,
-                    "write check " + stats.write + " in " + writeCheck);
+                assert.isTrue(
+                    writeCheck.findIndex((v) => v === stats.write) >= 0,
+                    "write check " + stats.write + " in " + writeCheck
+                );
             }
         });
     };
@@ -281,7 +308,6 @@ async function runTests() {
     testSd("open/write/stat/read/close", testOpenWriteStatClose);
     testSd("reconnect stat/read/close", testRead);
     testSd("exists/isdir", testHelpers);
-
 
     mocha.run();
 }

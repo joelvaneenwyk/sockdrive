@@ -1,14 +1,14 @@
 import { createFileSystem } from "./fatfs";
 
-const toBuffer = require("typedarray-to-buffer");
+import typedarrayToBuffer from "typedarray-to-buffer";
 import { Drive } from "./sockdrive/drive";
 import { EmModule, Stats as SockdriveStats } from "./sockdrive/types";
 
 export interface Driver {
-    sectorSize: number,
-    numSectors: number,
-    readSectors: (sector: number, dst: Uint8Array, cb: (error: Error | null, dst: Uint8Array) => void) => void,
-    writeSectors: (sector: number, src: Uint8Array, cb: (error: Error | null) => void) => void,
+    sectorSize: number;
+    numSectors: number;
+    readSectors: (sector: number, dst: Uint8Array, cb: (error: Error | null, dst: Uint8Array) => void) => void;
+    writeSectors: (sector: number, src: Uint8Array, cb: (error: Error | null) => void) => void;
 }
 
 type Callback = (error: Error | null) => void;
@@ -20,24 +20,39 @@ export interface FileSystemApi {
     mkdir(path: string, cb: Callback): void;
     readdir(path: string, cb: CallbackT<string[]>): void;
     open(path: string, flags: string | number, mode: number, cb: CallbackT<FileDescriptor>): void;
-    read(fd: FileDescriptor, buf: Buffer, offset: number,
-        length: number, pos: number | null, cb: CallbackT<number>): void;
-    write(fd: FileDescriptor, buf: Buffer, offset: number,
-        length: number, pos: number | null, cb: CallbackT<number>): void;
+    read(
+        fd: FileDescriptor,
+        buf: Buffer,
+        offset: number,
+        length: number,
+        pos: number | null,
+        cb: CallbackT<number>
+    ): void;
+    write(
+        fd: FileDescriptor,
+        buf: Buffer,
+        offset: number,
+        length: number,
+        pos: number | null,
+        cb: CallbackT<number>
+    ): void;
     fstat(fd: FileDescriptor, cb: CallbackT<Stats>): void;
     close(fd: FileDescriptor, cb: Callback): void;
 }
 
-export type CreateFileSystemApi = (driver: Driver, opts: {
-    ro?: boolean,
-    noatime?: boolean,
-    modmode?: number,
-    umask?: number,
-    uid?: number,
-    gid?: number,
-}, event: (event: "ready" | "error", reason: Error | null) => void) => FileSystemApi;
+export type CreateFileSystemApi = (
+    driver: Driver,
+    opts: {
+        ro?: boolean;
+        noatime?: boolean;
+        modmode?: number;
+        umask?: number;
+        uid?: number;
+        gid?: number;
+    },
+    event: (event: "ready" | "error", reason: Error | null) => void
+) => FileSystemApi;
 export type CreateSockdriveFileSystem = typeof createSockdriveFileSystem;
-
 
 export class FileSystem {
     fs: FileSystemApi;
@@ -66,15 +81,11 @@ export class FileSystem {
     fopen(path: string, flags: string | number, mode: number) {
         return this.promisify<FileDescriptor>(this.fs.open, path, flags, mode);
     }
-    fread(fd: FileDescriptor, buf: Uint8Array, offset: number,
-        length: number, pos: number | null) {
-        return this.promisify<number>(this.fs.read, fd, toBuffer(buf),
-            offset, length, pos);
+    fread(fd: FileDescriptor, buf: Uint8Array, offset: number, length: number, pos: number | null) {
+        return this.promisify<number>(this.fs.read, fd, typedarrayToBuffer(buf), offset, length, pos);
     }
-    fwrite(fd: FileDescriptor, buf: Uint8Array, offset: number,
-        length: number, pos: number | null) {
-        return this.promisify<number>(this.fs.write, fd, toBuffer(buf),
-            offset, length, pos);
+    fwrite(fd: FileDescriptor, buf: Uint8Array, offset: number, length: number, pos: number | null) {
+        return this.promisify<number>(this.fs.write, fd, typedarrayToBuffer(buf), offset, length, pos);
     }
     fstat(fd: FileDescriptor) {
         return this.promisify<Stats>(this.fs.fstat, fd);
@@ -85,14 +96,13 @@ export class FileSystem {
 
     // helpers
     async stat(path: string) {
-        const fd: number | null = await (this.fopen(path, "\\r", 0o666)
-            .catch((e: Error & { code: string }) => {
-                if (e.code === "NOENT") {
-                    return null;
-                }
+        const fd: number | null = await this.fopen(path, "\\r", 0o666).catch((e: Error & { code: string }) => {
+            if (e.code === "NOENT") {
+                return null;
+            }
 
-                throw e;
-            }));
+            throw e;
+        });
         if (fd === null) {
             return null;
         }

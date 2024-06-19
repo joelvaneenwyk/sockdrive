@@ -1,5 +1,9 @@
-dist/sockdrive*
-dist/test.js*
-dist/test/*.img
-node_modules
+dist/
+!dist/test.html
+node_modules/
 yarn-error.log
+yarn.lock
+package-lock.json
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/

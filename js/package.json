@@ -4,6 +4,10 @@
   "description": "The sockdrive support for emscripten",
   "license": "GPLv3",
   "private": true,
+  "scripts": {
+    "build": "webpack",
+    "test": "mocha --require ts-node/register test/**/*.ts"
+  },
   "dependencies": {
     "buffer": "^6.0.3",
     "fifolock": "^1.0.0",
@@ -13,16 +17,24 @@
     "xok": "^1.0.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.6",
-    "@types/mocha": "^10.0.1",
+    "@eslint/js": "^9.5.0",
+    "@types/chai": "^4.3.16",
+    "@types/eslint__js": "^8.42.3",
+    "@types/mocha": "^10.0.6",
+    "@types/typedarray-to-buffer": "^4.0.4",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
-    "eslint": "^8.48.0",
+    "chai": "^5.1.1",
+    "eslint": "^9.5.0",
     "eslint-config-google": "^0.14.0",
+    "eslint-plugin-prettier": "^5.1.3",
     "eslint-webpack-plugin": "^4.0.1",
+    "mocha": "^10.4.0",
+    "prettier": "^3.3.2",
     "process": "^0.11.10",
     "ts-loader": "^9.4.4",
-    "typescript": "^5.2.2",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.13.1",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
   }
