@@ -30,9 +30,9 @@ const bootInfo = _.struct([
     _.char("FilSysType", 8),
 ]);
 
-exports.boot16 = _.struct([bootBase, bootInfo]);
+export var boot16 = _.struct([bootBase, bootInfo]);
 
-exports.boot32 = _.struct([
+export var boot32 = _.struct([
     bootBase,
     _.uint32le("FATSz32"),
     _.struct(
@@ -108,7 +108,7 @@ const date = {
     size: _date.size,
 };
 
-exports.dirEntry = _.struct([
+export var dirEntry = _.struct([
     _.struct("Name", [_.char("filename", 8), _.char("extension", 3)]),
     _.struct(
         "Attr",
@@ -133,11 +133,11 @@ exports.dirEntry = _.struct([
     _.uint16le("FstClusLO"),
     _.uint32le("FileSize"),
 ]);
-exports.entryDoneFlag = 0x00;
-exports.entryFreeFlag = 0xe5;
-exports.entryIsE5Flag = 0x05;
+export var entryDoneFlag = 0x00;
+export var entryFreeFlag = 0xe5;
+export var entryIsE5Flag = 0x05;
 
-exports.dirEntry_simple = _.struct([
+export var dirEntry_simple = _.struct([
     _.struct("Name", [_.char("filename", 8), _.char("extension", 3)]),
     _.padTo(exports.dirEntry.size),
     /*
@@ -152,9 +152,9 @@ exports.dirEntry_simple = _.struct([
     */
 ]);
 
-exports.lastLongFlag = 0x40;
-exports.longDirFlag = 0x0f;
-exports.longDirEntry = _.struct([
+export var lastLongFlag = 0x40;
+export var longDirFlag = 0x0f;
+export var longDirEntry = _.struct([
     _.uint8("Ord"),
     _.char16le("Name1", 10),
     _.uint8("Attr_raw"),
@@ -168,7 +168,7 @@ exports.longDirEntry = _.struct([
 if (exports.longDirEntry.size !== exports.dirEntry.size)
     throw Error("Structs ain't right!");
 
-exports.fatField = {
+export var fatField = {
     fat12: _.struct("Status", [
         _.ubit("field0bc", 8),
         _.ubit("field1c", 4),
@@ -179,13 +179,13 @@ exports.fatField = {
     fat32: _.uint32le("Status"), // more properly this 4 bits reserved + uint28le
 };
 
-exports.fatPrefix = {
+export var fatPrefix = {
     fat12: 0xf00,
     fat16: 0xff00,
     fat32: 0x0fffff00,
 };
 
-exports.fatStat = {
+export var fatStat = {
     free: 0x00,
     _undef: 0x01,
     rsvMin: 0xf0,
@@ -194,7 +194,7 @@ exports.fatStat = {
     eof: 0xff,
 };
 
-exports._I = {
+export var _I = {
     RUSR: 0o400,
     WUSR: 0o200,
     XUSR: 0o100,
@@ -215,11 +215,11 @@ exports._I = {
     FREG: 0o100000,
 };
 
-exports._I.RWXU = exports._I.RUSR | exports._I.WUSR | exports._I.XUSR;
-exports._I.RWXG = exports._I.RGRP | exports._I.WGRP | exports._I.XGRP;
-exports._I.RWXO = exports._I.ROTH | exports._I.WOTH | exports._I.XOTH;
-exports._I._sss = exports._I.SUID | exports._I.SGID | exports._I.SVTX;
-exports._I._chmoddable =
+export var _I.RWXU = exports._I.RUSR | exports._I.WUSR | exports._I.XUSR;
+export var _I.RWXG = exports._I.RGRP | exports._I.WGRP | exports._I.XGRP;
+export var _I.RWXO = exports._I.ROTH | exports._I.WOTH | exports._I.XOTH;
+export var _I._sss = exports._I.SUID | exports._I.SGID | exports._I.SVTX;
+export var _I._chmoddable =
     exports._I.RWXU | exports._I.RWXG | exports._I.RWXO | exports._I._sss;
 
 const _errors = {
@@ -240,7 +240,7 @@ const _errors = {
     _TODO: "Not implemented yet!",
 };
 
-exports.err = {};
+export var err = {};
 Object.keys(_errors).forEach(function (sym) {
     const msg = _errors[sym];
     exports.err[sym] = function () {

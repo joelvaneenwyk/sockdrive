@@ -3,7 +3,7 @@ const _ = require("./helpers.js");
 
 const dir = exports;
 
-dir.iterator = function (dirChain, opts) {
+export function iterator(dirChain, opts) {
     opts || (opts = {});
 
     const cache = { buffer: null, n: null };
@@ -200,7 +200,7 @@ function _updateEntry(vol, entry, newStats) {
     return entry;
 }
 
-dir.makeStat = function (vol, entry) {
+export function makeStat (vol, entry) {
     const stats = {}; // TODO: return an actual `instanceof fs.Stat` somehow?
 
     stats.isFile = function () {

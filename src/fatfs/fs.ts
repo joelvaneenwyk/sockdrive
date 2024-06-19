@@ -6,7 +6,7 @@ const _ = require("./helpers.js");
 
 // _.log.level = _.log.DBG;
 
-exports.createFileSystem = function (volume, opts, cb) {
+export function createFileSystem(volume: { writeSectors: any; sectorSize: any; readSectors: (arg0: number, arg1: any, arg2: (e: any) => void) => void; }, opts: { ro: boolean; noatime: boolean; } | null, cb: (arg0: string, arg1: null) => any) {
     if (typeof opts === "function") {
         cb = opts;
         opts = null;
@@ -27,7 +27,7 @@ exports.createFileSystem = function (volume, opts, cb) {
     if (opts.ro) opts.noatime = true; // natch
 
     const fs = new events.EventEmitter();
-    let vol = null;
+    let vol: { rootDirectoryChain: any; chainForCluster: (arg0: any) => any; opts: { ro: any; noatime: any; }; } | null = null;
     const dir = require("./dir.js");
     const c = require("./chains.js");
     const q = fifolock();
@@ -35,21 +35,21 @@ exports.createFileSystem = function (volume, opts, cb) {
     const GROUP =
         _.log.level < _.log.INFO
             ? q.TRANSACTION_WRAPPER.bind({
-                  postAcquire: function (proceed) {
+                  postAcquire: function (proceed: () => void) {
                       _.log(_.log.DBG, "=== Starting GROUP ===");
                       proceed();
                   },
-                  preRelease: function (finish) {
+                  preRelease: function (finish: () => void) {
                       _.log(_.log.DBG, "=== Finishing GROUP ===");
                       finish();
                   },
               })
             : q.TRANSACTION_WRAPPER;
 
-    q.acquire(function (unlock) {
+    q.acquire(function (unlock: () => void) {
         // because of this, callers can start before 'ready'
         const d = _.allocBuffer(volume.sectorSize);
-        volume.readSectors(0, d, function (e) {
+        volume.readSectors(0, d, function (e: any) {
             if (e) fs.emit("error", e);
             else {
                 try {
@@ -67,7 +67,7 @@ exports.createFileSystem = function (volume, opts, cb) {
 
     if (cb) fs.on("error", cb).on("ready", () => cb("ready", null));
 
-    function init(bootSector) {
+    function init(bootSector: any) {
         vol = require("./vol.js").init(volume, opts, bootSector);
         fs._dirIterator = dir.iterator.bind(dir);
 
@@ -93,7 +93,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                 delete entryInfoByPath[this.path];
             },
         };
-        fs._createSharedEntry = function (path, entry, chain, parent) {
+        fs._createSharedEntry = function (path: any, entry: any, chain: any, parent: any) {
             return _.extend(Object.create(baseEntry), {
                 _refs: 0, // WORKAROUND: https://github.com/tessel/beta/issues/455
                 path: path,
@@ -107,14 +107,14 @@ exports.createFileSystem = function (volume, opts, cb) {
             { Attr: { directory: true } },
             vol.rootDirectoryChain,
         );
-        fs._sharedEntryForSteps = function (steps, opts, cb) {
+        fs._sharedEntryForSteps = function (steps: any[], opts: { prepareForCreate: any; }, cb: (arg0: null, arg1: { missingChild: any; parent: any; } | undefined) => void) {
             // NOTE: may `cb` before returning!
             const path = steps.join("/") || "/";
             const name = steps.pop(); // n.b.
             const info = entryInfoByPath[path];
             if (info) cb(null, info.retain());
             else {
-                fs._sharedEntryForSteps(steps, {}, function (e, parentInfo) {
+                fs._sharedEntryForSteps(steps, {}, function (e: any, parentInfo: { entry: { Attr: { directory: any; }; }; chain: any; }) {
                     // n.b. `steps` don't include `name`
                     if (e) cb(e);
                     else if (!parentInfo.entry.Attr.directory)
@@ -125,7 +125,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                             parentInfo.chain,
                             name,
                             opts,
-                            function (e, entry) {
+                            function (e: any, entry: { _firstCluster: any; }) {
                                 if (e && !opts.prepareForCreate) cb(e);
                                 else if (e)
                                     cb(e, {
@@ -164,7 +164,7 @@ exports.createFileSystem = function (volume, opts, cb) {
     // NOTE: we really don't share namespace, but avoid first three anyway…
     const fileDescriptors = [null, null, null];
 
-    fs.open = function (path, flags, mode, cb, _n_) {
+    fs.open = function (path: any, flags: any, mode: number, cb: (arg0: any, arg1: number | undefined) => void, _n_: string) {
         if (typeof mode === "function") {
             _n_ = cb;
             cb = mode;
@@ -182,7 +182,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                 fs._sharedEntryForSteps(
                     _.absoluteSteps(path),
                     { prepareForCreate: f.create },
-                    function (e, info) {
+                    function (e: { code: string; }, info: { parent: { chain: any; }; missingChild: any; entry: { Attr: { directory: any; readonly: any; }; }; }) {
                         if (e && !(e.code === "NOENT" && f.create && info))
                             cb(e);
                         else if (e) {
@@ -190,7 +190,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                                 info.parent.chain,
                                 info.missingChild,
                                 { dir: f._openDir },
-                                function (e, newEntry, newChain) {
+                                function (e: any, newEntry: any, newChain: any) {
                                     if (e) cb(e);
                                     else
                                         finish(
@@ -209,7 +209,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                         else if (f.write && info.entry.Attr.readonly)
                             cb(S.err.ACCES());
                         else finish(info);
-                        function finish(fileInfo) {
+                        function finish(fileInfo: { entry: null; chain: null; }) {
                             const fd = fileDescriptors.push(_fd) - 1;
                             _fd.info = fileInfo;
                             _fd.entry = fileInfo.entry;
@@ -220,7 +220,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                                 fs.ftruncate(
                                     fd,
                                     0,
-                                    function (e) {
+                                    function (e: any) {
                                         cb(e, fd);
                                     },
                                     "_nested_",
@@ -234,7 +234,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.fstat = function (fd, cb, _n_) {
+    fs.fstat = function (fd: string | number, cb: any, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -246,7 +246,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.futimes = function (fd, atime, mtime, cb, _n_) {
+    fs.futimes = function (fd: string | number, atime: any, mtime: any, cb: any, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -264,7 +264,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.fchmod = function (fd, mode, cb, _n_) {
+    fs.fchmod = function (fd: string | number, mode: number, cb: any, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -281,7 +281,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.read = function (fd, buf, off, len, pos, cb, _n_) {
+    fs.read = function (fd: string | number, buf: string | any[], off: number, len: number, pos: null, cb: (arg0: any, arg1: any, arg2: any) => void, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -295,13 +295,13 @@ exports.createFileSystem = function (volume, opts, cb) {
                 _fd.chain.readFromPosition(
                     _pos,
                     _buf,
-                    function (e, bytes, slice) {
+                    function (e: any, bytes: any, slice: any) {
                         if (_.workaroundTessel380) _buf.copy(buf, off); // WORKAROUND: https://github.com/tessel/beta/issues/380
                         _fd.pos = _pos + bytes;
                         if (e || vol.opts.noatime) finish(e);
                         else
                             fs._updateEntry(_fd.entry, { atime: true }, finish);
-                        function finish(e) {
+                        function finish(e: any) {
                             cb(e, bytes, buf);
                         }
                     },
@@ -311,7 +311,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs._readdir = function (fd, cb, _n_) {
+    fs._readdir = function (fd: string | number, cb: (arg0: null, arg1: any[] | undefined) => void, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -319,10 +319,10 @@ exports.createFileSystem = function (volume, opts, cb) {
                 if (!_fd || !_fd.flags.read)
                     return _.delayedCall(cb, S.err.BADF());
 
-                const entryNames = [];
+                const entryNames: any[] = [];
                 const getNextEntry = fs._dirIterator(_fd.chain);
                 function processNext() {
-                    getNextEntry(function (e, d) {
+                    getNextEntry(function (e: any, d: { _name: string; }) {
                         if (e) cb(e);
                         else if (!d && !entryNames.length)
                             cb(null, entryNames); // WORKAROUND: https://github.com/tessel/beta/issues/435
@@ -341,7 +341,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs._mkdir = function (fd, cb, _n_) {
+    fs._mkdir = function (fd: string | number, cb: any, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -353,7 +353,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.write = function (fd, buf, off, len, pos, cb, _n_) {
+    fs.write = function (fd: string | number, buf: string | any[], off: any, len: any, pos: null, cb: (arg0: any, arg1: any, arg2: any) => void, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -372,11 +372,11 @@ exports.createFileSystem = function (volume, opts, cb) {
                     _pos = _fd.entry._size;
                     _buf = padBuf;
                 }
-                _fd.chain.writeToPosition(_pos, _buf, function (e) {
+                _fd.chain.writeToPosition(_pos, _buf, function (e: any) {
                     _fd.pos = _pos + len;
                     const newSize = Math.max(_fd.entry._size, _fd.pos);
                     const newInfo = { size: newSize, _touch: true };
-                    fs._updateEntry(_fd.entry, newInfo, function (ee) {
+                    fs._updateEntry(_fd.entry, newInfo, function (ee: any) {
                         cb(e || ee, len, buf);
                     });
                 });
@@ -385,7 +385,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.ftruncate = function (fd, len, cb, _n_) {
+    fs.ftruncate = function (fd: string | number, len: number, cb: (arg0: any) => void, _n_: string) {
         cb = GROUP(
             cb,
             function () {
@@ -397,7 +397,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                 // NOTE: we order operations for best state in case of only partial success
                 if (len === _fd.entry._size) _.delayedCall(cb);
                 else if (len < _fd.entry._size) {
-                    fs._updateEntry(_fd.entry, newStats, function (e) {
+                    fs._updateEntry(_fd.entry, newStats, function (e: any) {
                         if (e) cb(e);
                         else
                             _fd.chain.truncate(
@@ -410,7 +410,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                     _fd.chain.writeToPosition(
                         _fd.entry._size,
                         _.allocBuffer(len - _fd.entry._size, 0x00),
-                        function (e) {
+                        function (e: any) {
                             if (e) cb(e);
                             else fs._updateEntry(_fd.entry, newStats, cb);
                         },
@@ -422,7 +422,7 @@ exports.createFileSystem = function (volume, opts, cb) {
     };
 
     // 'NORMAL', 'SEQUENTIAL', 'RANDOM', 'WILLNEED', 'DONTNEED', 'NOREUSE'
-    fs._fadviseSync = function (fd, off, len, advice) {
+    fs._fadviseSync = function (fd: string | number, off: number, len: number, advice: any) {
         if (off !== 0 || len !== 0)
             throw Error(
                 "Cache advise can currently be given only for whole file!",
@@ -432,14 +432,14 @@ exports.createFileSystem = function (volume, opts, cb) {
         else _fd.chain.cacheAdvice = advice;
     };
 
-    fs.fsync = function (fd, cb) {
+    fs.fsync = function (fd: string | number, cb: any) {
         // NOTE: we'll need to flush write cache here once we have one…
         const _fd = fileDescriptors[fd];
         if (!_fd) _.delayedCall(cb, S.err.BADF());
         else _.delayedCall(cb);
     };
 
-    fs.close = function (fd, cb) {
+    fs.close = function (fd: string | number, cb: any) {
         const _fd = fileDescriptors[fd];
         if (!_fd) _.delayedCall(cb, S.err.BADF());
         else
@@ -449,7 +449,7 @@ exports.createFileSystem = function (volume, opts, cb) {
 
     /* STREAM WRAPPERS */
 
-    let workaroundTessel436;
+    let workaroundTessel436: boolean;
     try {
         new require("stream").Readable({ encoding: "utf8" });
         new streams.Readable({ encoding: "utf8" });
@@ -457,7 +457,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         workaroundTessel436 = true;
     }
 
-    function _createStream(StreamType, path, opts) {
+    function _createStream(StreamType: new (arg0: any) => any, path: any, opts: { encoding: any; fd: null; start: any; flags: any; mode: any; autoClose: any; end: number; }) {
         // [NOT REALLY A] WORKAROUND: https://github.com/tessel/beta/issues/436
         if (workaroundTessel436 && "encoding" in opts) {
             console.warn(
@@ -471,7 +471,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         const stream = new StreamType(opts);
 
         if (fd === "_opening_") {
-            fs.open(path, opts.flags, opts.mode, function (e, _fd) {
+            fs.open(path, opts.flags, opts.mode, function (e: any, _fd: any) {
                 if (e) {
                     fd = "_open_error_";
                     stream.emit("error", e);
@@ -483,10 +483,10 @@ exports.createFileSystem = function (volume, opts, cb) {
             });
         }
 
-        function autoClose(tombstone) {
+        function autoClose(tombstone: string) {
             // NOTE: assumes caller will clear `fd`
             if (opts.autoClose) {
-                fs.close(fd, function (e) {
+                fs.close(fd, function (e: any) {
                     if (e) stream.emit("error", e);
                     else stream.emit("close");
                 });
@@ -495,7 +495,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         }
 
         if (StreamType === streams.Readable) {
-            stream._read = function (n) {
+            stream._read = function (n: number) {
                 let buf;
                 // TODO: optimize to fetch at least a full sector regardless of `n`…
                 n = Math.min(n, opts.end - pos);
@@ -506,7 +506,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                 } else if (pos > opts.end) stream.push(null);
                 else if (n > 0) {
                     (buf = _.allocBuffer(n)),
-                        fs.read(fd, buf, 0, n, pos, function (e, n, d) {
+                        fs.read(fd, buf, 0, n, pos, function (e: any, n: any, d: string | any[]) {
                             if (e) {
                                 autoClose("_read_error_");
                                 stream.emit("error", e);
@@ -522,13 +522,13 @@ exports.createFileSystem = function (volume, opts, cb) {
         } else if (StreamType === streams.Writable) {
             stream.bytesWritten = 0;
 
-            stream._write = function (data, _enc, cb) {
+            stream._write = function (data: string | any[], _enc: any, cb: (arg0: undefined) => void) {
                 if (fd === "_opening_") {
                     stream.once("open", function () {
                         stream._write(data, null, cb);
                     });
                 } else {
-                    fs.write(fd, data, 0, data.length, pos, function (e, n) {
+                    fs.write(fd, data, 0, data.length, pos, function (e: any, n: any) {
                         if (e) {
                             autoClose("_write_error_");
                             cb(e);
@@ -549,7 +549,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         return stream;
     }
 
-    fs.createReadStream = function (path, opts) {
+    fs.createReadStream = function (path: any, opts: any) {
         return _createStream(
             streams.Readable,
             path,
@@ -568,7 +568,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.createWriteStream = function (path, opts) {
+    fs.createWriteStream = function (path: any, opts: any) {
         return _createStream(
             streams.Writable,
             path,
@@ -589,13 +589,13 @@ exports.createFileSystem = function (volume, opts, cb) {
 
     /* PATH WRAPPERS (albeit the only public interface for some folder operations) */
 
-    function _fdOperation(path, opts, fn, cb) {
+    function _fdOperation(path: any, opts: { flag: any; advice?: any; }, fn: { (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (fd: any, cb: any): void; (arg0: any, arg1: () => void): any; }, cb: { (arg0: any): void; (arg0: any): void; apply: any; }) {
         cb = GROUP(cb, function () {
             opts.advice || (opts.advice = "NORMAL");
             fs.open(
                 path,
                 opts.flag,
-                function (e, fd) {
+                function (e: any, fd: any) {
                     if (e) cb(e);
                     else {
                         fs._fadviseSync(fd, 0, 0, opts.advice),
@@ -604,7 +604,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                                 const args = arguments;
                                 fs.close(
                                     fd,
-                                    function (closeErr) {
+                                    function (closeErr: any) {
                                         cb.apply(ctx, args);
                                     },
                                     "_nested_",
@@ -617,24 +617,24 @@ exports.createFileSystem = function (volume, opts, cb) {
         });
     }
 
-    fs.stat = fs.lstat = function (path, cb) {
+    fs.stat = fs.lstat = function (path: any, cb: any) {
         _fdOperation(
             path,
             { flag: "r" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs.fstat(fd, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.exists = function (path, cb) {
-        fs.stat(path, function (err) {
+    fs.exists = function (path: any, cb: (arg0: boolean) => void) {
+        fs.stat(path, function (err: any) {
             cb(err ? false : true);
         });
     };
 
-    fs.readFile = function (path, opts, cb) {
+    fs.readFile = function (path: any, opts: { flag?: any; advice?: any; encoding?: any; }, cb: any) {
         if (typeof opts === "function") {
             cb = opts;
             opts = {};
@@ -644,10 +644,10 @@ exports.createFileSystem = function (volume, opts, cb) {
         _fdOperation(
             path,
             opts,
-            function (fd, cb) {
+            function (fd: any, cb: (arg0: null, arg1: undefined) => void) {
                 fs.fstat(
                     fd,
-                    function (e, stat) {
+                    function (e: any, stat: { size: any; }) {
                         if (e) return cb(e);
                         else {
                             const buffer = _.allocBuffer(stat.size);
@@ -657,7 +657,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                                 0,
                                 buffer.length,
                                 null,
-                                function (e) {
+                                function (e: any) {
                                     if (e) cb(e);
                                     else
                                         cb(
@@ -678,7 +678,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.writeFile = function (path, data, opts, cb) {
+    fs.writeFile = function (path: any, data: string | any[], opts: { flag?: any; advice?: any; encoding?: any; }, cb: any) {
         if (typeof opts === "function") {
             cb = opts;
             opts = {};
@@ -688,7 +688,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         _fdOperation(
             path,
             opts,
-            function (fd, cb) {
+            function (fd: any, cb: (arg0: any) => void) {
                 if (typeof data === "string")
                     data = _.bufferFrom(data, opts.encoding || "utf8");
                 fs.write(
@@ -697,7 +697,7 @@ exports.createFileSystem = function (volume, opts, cb) {
                     0,
                     data.length,
                     null,
-                    function (e) {
+                    function (e: any) {
                         cb(e);
                     },
                     "_nested_",
@@ -707,7 +707,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.appendFile = function (path, data, opts, cb) {
+    fs.appendFile = function (path: any, data: any, opts: { flag?: any; }, cb: any) {
         if (typeof opts === "function") {
             cb = opts;
             opts = {};
@@ -716,29 +716,29 @@ exports.createFileSystem = function (volume, opts, cb) {
         fs.writeFile(path, data, opts, cb);
     };
 
-    fs.truncate = function (path, len, cb) {
+    fs.truncate = function (path: any, len: any, cb: any) {
         _fdOperation(
             path,
             { flag: "r+" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs.ftruncate(fd, len, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.readdir = function (path, cb) {
+    fs.readdir = function (path: any, cb: any) {
         _fdOperation(
             path,
             { flag: "\\r" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs._readdir(fd, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.mkdir = function (path, mode, cb) {
+    fs.mkdir = function (path: any, mode: number, cb: any) {
         if (typeof mode === "function") {
             cb = mode;
             mode = 0o777;
@@ -746,40 +746,40 @@ exports.createFileSystem = function (volume, opts, cb) {
         _fdOperation(
             path,
             { flag: "\\wx" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs._mkdir(fd, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.utimes = function (path, atime, mtime, cb) {
+    fs.utimes = function (path: any, atime: any, mtime: any, cb: any) {
         _fdOperation(
             path,
             { flag: "r+" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs.futimes(fd, atime, mtime, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.chmod = fs.lchmod = function (path, mode, cb) {
+    fs.chmod = fs.lchmod = function (path: any, mode: any, cb: any) {
         _fdOperation(
             path,
             { flag: "\\r+" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs.fchmod(fd, mode, cb, "_nested_");
             },
             cb,
         );
     };
 
-    fs.chown = fs.lchown = function (path, uid, gid, cb) {
+    fs.chown = fs.lchown = function (path: any, uid: any, gid: any, cb: any) {
         _fdOperation(
             path,
             { flag: "\\r+" },
-            function (fd, cb) {
+            function (fd: any, cb: any) {
                 fs.fchown(fd, uid, gid, cb, "_nested_");
             },
             cb,
@@ -788,12 +788,12 @@ exports.createFileSystem = function (volume, opts, cb) {
 
     /* STUBS */
 
-    fs.link = function (src, dst, cb) {
+    fs.link = function (src: any, dst: any, cb: any) {
         // NOTE: theoretically we _could_ do hard links [with untracked `stat.nlink` count…]
         _.delayedCall(cb, S.err.NOSYS());
     };
 
-    fs.symlink = function (src, dst, type, cb) {
+    fs.symlink = function (src: any, dst: any, type: null, cb: any) {
         if (typeof type === "function") {
             cb = type;
             type = null;
@@ -801,11 +801,11 @@ exports.createFileSystem = function (volume, opts, cb) {
         _.delayedCall(cb, S.err.NOSYS());
     };
 
-    fs.readlink = function (path, cb) {
+    fs.readlink = function (path: any, cb: any) {
         _fdOperation(
             path,
             { flag: "\\r" },
-            function (fd, cb) {
+            function (fd: any, cb: (arg0: any) => void) {
                 // the named file is *never* a symbolic link…
                 // NOTE: we still use _fdOperation for catching e.g. NOENT/NOTDIR errors…
                 cb(S.err.INVAL());
@@ -814,7 +814,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         );
     };
 
-    fs.realpath = function (path, cache, cb) {
+    fs.realpath = function (path: any, cache: null, cb: any) {
         if (typeof cache === "function") {
             cb = cache;
             cache = null;
@@ -825,7 +825,7 @@ exports.createFileSystem = function (volume, opts, cb) {
             _fdOperation(
                 path,
                 { flag: "\\r" },
-                function (fd, cb) {
+                function (fd: any, cb: (arg0: null, arg1: any) => void) {
                     cb(null, _.absolutePath(path));
                 },
                 cb,
@@ -833,7 +833,7 @@ exports.createFileSystem = function (volume, opts, cb) {
         }
     };
 
-    fs.fchown = function (fd, uid, gid, cb, _n_) {
+    fs.fchown = function (fd: string | number, uid: any, gid: any, cb: any, _n_: string) {
         cb = GROUP(
             cb,
             function () {

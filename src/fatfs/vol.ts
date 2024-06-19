@@ -2,7 +2,7 @@ const S = require("./structs.js");
 const c = require("./chains.js");
 const _ = require("./helpers.js");
 
-exports.init = function (volume, opts, bootSector) {
+export function init(volume: { sectorSize: number; numSectors: number; readSectors: (arg0: any, arg1: any, arg2: (e: any) => void) => void; writeSectors: (arg0: any, arg1: any, arg2: any) => void; }, opts: { ro: any; }, bootSector: number[] | null) {
     if (bootSector[510] !== 0x55 || bootSector[511] !== 0xaa)
         throw Error("Invalid volume signature!");
 
@@ -26,7 +26,7 @@ exports.init = function (volume, opts, bootSector) {
     // avoid corrupting sectors from other partitions or whatnot
     if (totSec > volume.numSectors) throw Error("Volume size mismatch!");
 
-    let fatType;
+    let fatType: string;
     if (countofClusters < 4085) {
         fatType = "fat12";
     } else if (countofClusters < 65525) {
@@ -53,24 +53,24 @@ exports.init = function (volume, opts, bootSector) {
 
     vol._sectorSize = BS.BytsPerSec;
     vol._sectorsPerCluster = BS.SecPerClus;
-    vol._firstSectorOfCluster = function (n) {
+    vol._firstSectorOfCluster = function (n: number) {
         return firstDataSector + (n - 2) * vol._sectorsPerCluster;
     };
 
-    vol._readSectors = function (secNum, dest, cb) {
+    vol._readSectors = function (secNum: number, dest: string | any[], cb: (arg0: any, arg1: any) => void) {
         if (typeof dest === "function") {
             cb = dest;
             dest = _.allocBuffer(vol._sectorSize);
         }
         _.log(_.log.DBG, "vol._readSectors", secNum, dest.length);
         if (secNum < volume.numSectors) {
-            volume.readSectors(secNum, dest, function (e) {
+            volume.readSectors(secNum, dest, function (e: any) {
                 cb(e, dest);
             });
         } else throw Error("Invalid sector number!");
     };
 
-    vol._writeSectors = function (secNum, data, cb) {
+    vol._writeSectors = function (secNum: number, data: string | any[], cb: any) {
         _.log(_.log.DBG, "vol._writeSectors", secNum, data.length);
         // NOTE: these are internal assertions, public API will get proper `S.err`s
         if (data.length % volume.sectorSize)
@@ -81,7 +81,7 @@ exports.init = function (volume, opts, bootSector) {
         else throw Error("Invalid sector number!");
     };
 
-    function fatInfoForCluster(n) {
+    function fatInfoForCluster(n: number) {
         const entryStruct = S.fatField[fatType];
         const FATOffset =
             fatType === "fat12"
@@ -103,9 +103,9 @@ exports.init = function (volume, opts, bootSector) {
     const fatChain = c.sectorChain(vol, BS.ResvdSecCnt, FATSz);
     fatChain.cacheAdvice = "RANDOM";
 
-    vol.fetchFromFAT = function (clusterNum, cb) {
+    vol.fetchFromFAT = function (clusterNum: number, cb: (arg0: null, arg1: string | undefined) => void) {
         const info = fatInfoForCluster(clusterNum);
-        fatChain.readFromPosition(info, info.struct.size, function (e, n, d) {
+        fatChain.readFromPosition(info, info.struct.size, function (e: any, n: any, d: any) {
             if (e) return cb(e);
             let status = info.struct.valueFromBytes(d);
             var prefix;
@@ -129,7 +129,7 @@ exports.init = function (volume, opts, bootSector) {
         });
     };
 
-    vol.storeToFAT = function (clusterNum, status, cb) {
+    vol.storeToFAT = function (clusterNum: number, status: number, cb: any) {
         if (typeof status === "string") {
             status = S.fatStat[status];
             status += S.fatPrefix[fatType];
@@ -140,7 +140,7 @@ exports.init = function (volume, opts, bootSector) {
             fatChain.readFromPosition(
                 info,
                 info.struct.size,
-                function (e, n, d) {
+                function (e: any, n: any, d: any) {
                     const value = info.struct.valueFromBytes(d);
                     if (clusterNum % 2) {
                         value.field1ab = status >>> 4;
@@ -159,21 +159,21 @@ exports.init = function (volume, opts, bootSector) {
         }
     };
 
-    vol.allocateInFAT = function (hint, cb) {
+    vol.allocateInFAT = function (hint: number, cb: { (arg0: any): void; (arg0: any): void; bind: any; }) {
         if (typeof hint === "function") {
             cb = hint;
             hint = 2; // TODO: cache a better starting point?
         }
-        function searchForFreeCluster(num, cb) {
+        function searchForFreeCluster(num: number, cb: { (e: any, clusterNum: any): void; (arg0: null, arg1: undefined): void; }) {
             if (num < countofClusters) {
-                vol.fetchFromFAT(num, function (e, status) {
+                vol.fetchFromFAT(num, function (e: any, status: string) {
                     if (e) cb(e);
                     else if (status === "free") cb(null, num);
                     else searchForFreeCluster(num + 1, cb);
                 });
             } else cb(S.err.NOSPC()); // TODO: try searching backwards from hint…
         }
-        searchForFreeCluster(hint, function (e, clusterNum) {
+        searchForFreeCluster(hint, function (e: any, clusterNum: any) {
             if (e) cb(e);
             else
                 vol.storeToFAT(
@@ -189,7 +189,7 @@ exports.init = function (volume, opts, bootSector) {
         : c.clusterChain(vol, BS.RootClus);
     vol.rootDirectoryChain.cacheAdvice = "WILLNEED";
     vol.chainForCluster = c.clusterChain.bind(c, vol);
-    vol.chainFromJSON = function (d) {
+    vol.chainFromJSON = function (d: { firstSector: any; numSectors: any; firstCluster: any; }) {
         return "numSectors" in d
             ? c.sectorChain(vol, d.firstSector, d.numSectors)
             : c.clusterChain(vol, d.firstCluster);

@@ -2,21 +2,21 @@ const S = require("./structs.js");
 const _xok = require("xok");
 
 // ponyfills for older node.js
-exports.allocBuffer =
+export var allocBuffer =
     Buffer.alloc ||
-    function (len, val) {
+    function (len: any, val: any) {
         const b = Buffer(len);
         if (arguments.length > 1) b.fill(val);
         return b;
     };
-exports.bufferFrom =
+export var bufferFrom =
     Buffer.from ||
-    function (arg0, arg1) {
+    function (arg0: any, arg1: any) {
         return arguments.length > 1 ? Buffer(arg0, arg1) : Buffer(arg0);
     };
 
 // flag for WORKAROUND: https://github.com/tessel/beta/issues/380
-exports.workaroundTessel380 =
+export var workaroundTessel380 =
     !Buffer.from &&
     (function () {
         const b = Buffer([0]);
@@ -25,10 +25,10 @@ exports.workaroundTessel380 =
     })();
 
 // WORKAROUND: https://github.com/tessel/beta/issues/433
-let oldslice;
+let oldslice: { call: (arg0: any, arg1: any, arg2: undefined) => any; };
 if (!Buffer.alloc && Buffer(5).slice(10).length < 0) {
     (oldslice = Buffer.prototype.slice),
-        (Buffer.prototype.slice = function (s, e) {
+        (Buffer.prototype.slice = function (s: number, e: any) {
             if (s > this.length) s = this.length;
             // ~WORKAROUND: https://github.com/tessel/beta/issues/434
             return arguments.length > 1
@@ -37,21 +37,21 @@ if (!Buffer.alloc && Buffer(5).slice(10).length < 0) {
         });
 }
 
-exports.absoluteSteps = function (path) {
-    const steps = [];
-    path.split("/").forEach(function (str) {
+export var absoluteSteps = function (path: string) {
+    const steps: any[] = [];
+    path.split("/").forEach(function (str: string) {
         // NOTE: these should actually be fine, just wasteful…
         if (str === "..") steps.pop();
         else if (str && str !== ".") steps.push(str);
     });
-    return steps.map(exports.longname);
+    return steps.map(longname);
 };
 
-exports.absolutePath = function (path) {
-    return "/" + exports.absoluteSteps(path).join("/");
+export var absolutePath = function (path: any) {
+    return "/" + absoluteSteps(path).join("/");
 };
 
-exports.parseFlags = function (flags) {
+export var parseFlags = function (flags: string | any[]) {
     // read, write, append, create, truncate, exclusive
     let info;
     let _dir; // NOTE: there might be more clever ways to "parse", but…
@@ -119,7 +119,7 @@ exports.parseFlags = function (flags) {
 
 // TODO: these are great candidates for special test coverage!
 const _snInvalid = /[^A-Z0-9$%'-_@~`!(){}^#&.]/g; // NOTE: '.' is not valid but we split it away
-exports.shortname = function (name) {
+export var shortname = function (name: string) {
     let lossy = false;
     // TODO: support preservation of case for otherwise non-lossy name!
     name = name.toUpperCase().replace(/ /g, "").replace(/^\.+/, "");
@@ -154,11 +154,11 @@ exports.shortname = function (name) {
 // TODO: OS X stores `shortname("._.Trashes")` as ['~1', 'TRA'] — should we?
 
 const _lnInvalid = /[^a-zA-Z0-9$%'-_@~`!(){}^#&.+,;=[\] ]/g;
-exports.longname = function (name) {
+export var longname = function (name: string) {
     name = name
         .trim()
         .replace(/\.+$/, "")
-        .replace(_lnInvalid, function (c) {
+        .replace(_lnInvalid, function (c: string) {
             if (c.length > 1)
                 throw Error("Internal problem: unexpected match length!");
             if (c.charCodeAt(0) > 127) return c;
@@ -173,12 +173,12 @@ exports.longname = function (name) {
     return name;
 };
 
-function nameChkSum(sum, c) {
+function nameChkSum(sum: number, c: number) {
     return ((sum & 1 ? 0x80 : 0) + (sum >>> 1) + c) & 0xff;
 }
 
 // WORKAROUND: https://github.com/tessel/beta/issues/335
-function reduceBuffer(buf, start, end, fn, res) {
+function reduceBuffer(buf: { [x: string]: any; }, start: any, end: number, fn: { (sum: any, c: any): number; (arg0: any, arg1: any): any; }, res: number) {
     // NOTE: does not handle missing `res` like Array.prototype.reduce would
     for (let i = start; i < end; ++i) {
         res = fn(res, buf[i]);
@@ -186,7 +186,7 @@ function reduceBuffer(buf, start, end, fn, res) {
     return res;
 }
 
-exports.checksumName = function (buf, off) {
+export var checksumName = function (buf: any, off: number) {
     off || (off = 0);
     const len = S.dirEntry.fields["Name"].size;
     return reduceBuffer(buf, off, off + len, nameChkSum, 0);
@@ -209,11 +209,11 @@ function tryBoth(d) {
 });
 */
 
-exports.fmtHex = function (n, ff) {
+export var fmtHex = function (n: any, ff: number) {
     return (1 + ff + n).toString(16).slice(1);
 };
 
-exports.delayedCall = function (fn) {
+export var delayedCall = function (fn: { apply: (arg0: any, arg1: any[]) => void; }) {
     if (!fn) throw Error("No function provided!"); // debug aid
     const ctx = this;
     const args = Array.prototype.slice.call(arguments, 1);
@@ -224,7 +224,7 @@ exports.delayedCall = function (fn) {
     // }, 4);
 };
 
-exports.adjustedPos = function (vol, pos, bytes) {
+export var adjustedPos = function (vol: { _sectorSize: any; }, pos: { chain: any; sector: any; offset: any; }, bytes: any) {
     const _pos = {
         chain: pos.chain,
         sector: pos.sector,
@@ -238,12 +238,12 @@ exports.adjustedPos = function (vol, pos, bytes) {
     return _pos;
 };
 
-exports.extend = _xok;
+export var extend = _xok;
 
 let _prevDbg = Date.now();
 const _thresh = 50;
 
-function log(level) {
+function log(level: number) {
     if (level < log.level) return;
 
     const now = Date.now();
@@ -259,4 +259,4 @@ log.ERR = -1;
 
 log.level = log.WARN;
 
-exports.log = log;
+export var log = log;
