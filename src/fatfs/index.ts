@@ -1,9 +1,8 @@
-import { createFileSystem } from "@fatfs/";
+import { createFileSystem } from "./fs";
 
-import { Drive } from "@sockdrive/drive";
+import { Drive } from "@sockdrive";
 import { EmModule, Stats as SockdriveStats } from "@sockdrive/types";
 import typedarrayToBuffer from "typedarray-to-buffer";
-
 
 export interface Driver {
     sectorSize: number;
