@@ -241,7 +241,9 @@ async function runTests() {
             await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
             assert.equal(drive.read(0, 0, true), 0, "sector 0 in cache");
-            assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([51, 192, 142, 208, 188, 0, 124, 251, 80, 7]));
+            assert.deepEqual(
+                module.HEAPU8.slice(0, 10),
+                new Uint8Array([51, 192, 142, 208, 188, 0, 124, 251, 80, 7]));
 
             assert.equal(await drive.read(8192, 0, true), 0, "sector 8192 in cache");
             assert.deepEqual(module.HEAPU8.slice(0, 10), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));

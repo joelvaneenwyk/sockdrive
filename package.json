@@ -6,7 +6,8 @@
   "packageManager": "npm@10.8.1+sha512.0e9d42e92bd2318408ed81eaff2da5f78baf23ee7d12a6eed44a6e2901d0f29d7ab715d1b918ade601f72e769a824d9a5c322383f22bbbda5dd396e79de2a077",
   "private": true,
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "test": "mocha src/test/test.ts"
   },
   "dependencies": {
     "buffer": "^6",
@@ -18,12 +19,16 @@
   },
   "devDependencies": {
     "@types/chai": "^4.3.16",
+    "@types/events": "^3",
     "@types/mocha": "^10",
+    "@types/node": "^20.14.6",
     "@typescript-eslint/eslint-plugin": "^7",
     "@typescript-eslint/parser": "^7",
-    "chai": "^5.1.1",
+    "chai": "^5",
     "eslint": "<9",
     "eslint-webpack-plugin": "^4",
+    "events": "^3",
+    "mocha": "^10",
     "process": "^0.11",
     "ts-loader": "^9",
     "typescript": "^5",

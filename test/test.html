@@ -4,20 +4,20 @@
     <meta charset="utf-8" />
     <title>sockdrive js ffi tests</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="test/mocha.css" />
+    <link rel="stylesheet" href="external/mocha.css" />
   </head>
   <body>
     <div id="mocha"></div>
 
-    <script src="test/chai.js"></script>
-    <script src="test/mocha.js"></script>
+    <script src="external/chai.js"></script>
+    <script src="external/mocha.js"></script>
     <script class="mocha-init">
       mocha.setup("qunit");
       mocha.timeout(5000);
       mocha.checkLeaks();
     </script>
-    <script src="sockdriveFat.js"></script>
-    <script src="test.js"></script>
+    <script src="../dist/sockdriveFat.js"></script>
+    <script src="../dist/test.js"></script>
     <script class="mocha-exec">
       runTests().catch(console.error);
     </script>

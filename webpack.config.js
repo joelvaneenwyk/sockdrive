@@ -22,9 +22,14 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"],
         fallback: {
+            'process/browser': require.resolve('process/browser'),
+            events: require.resolve("events/"),
             stream: require.resolve("stream-browserify"),
             buffer: require.resolve("buffer"),
         },
+    },
+    stats: {
+        errorDetails: true
     },
     output: {
         filename: "[name].js",
