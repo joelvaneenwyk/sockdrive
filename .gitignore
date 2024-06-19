@@ -1,1 +1,5 @@
-.idea
+.idea/+
+dist/
+.yarn/
+node_modules/
+yarn.lock
