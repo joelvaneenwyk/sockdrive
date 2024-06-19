@@ -10,8 +10,5 @@
     "moduleResolution": "node",
     "rootDir": "."
   },
-  "include": [
-    "./src/**/*",
-    "*.js"
-  ]
+  "include": ["./src/**/*", "*.js"]
 }

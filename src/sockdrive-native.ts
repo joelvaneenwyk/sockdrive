@@ -2,17 +2,17 @@ import { EmModule, Handle, Ptr, Stats } from "./sockdrive/types";
 import { Drive } from "./sockdrive/drive";
 
 interface Template {
-    name: string,
-    size: number,
-    heads: number,
-    cylinders: number,
-    sectors: number,
-    sector_size: number,
+    name: string;
+    size: number;
+    heads: number;
+    cylinders: number;
+    sectors: number;
+    sector_size: number;
 }
 
 declare const Module: EmModule & any;
 
-(function() {
+(function () {
     let seq = 0;
     const mapping: { [handle: Handle]: Drive } = {};
     const templates: { [handle: number]: Template } = {};
@@ -35,9 +35,19 @@ declare const Module: EmModule & any;
         onPreloadProgress: (dirve: string, restBytes: number) => {
             // noop
         },
-        open: async (url: string, owner: string, name: string, token: string): Promise<Handle> => {
-            const response = await fetch(url.replace("wss://", "https://")
-                .replace("ws://", "http://") + "/template/" + owner + "/" + name);
+        open: async (
+            url: string,
+            owner: string,
+            name: string,
+            token: string,
+        ): Promise<Handle> => {
+            const response = await fetch(
+                url.replace("wss://", "https://").replace("ws://", "http://") +
+                    "/template/" +
+                    owner +
+                    "/" +
+                    name,
+            );
             const template = await response.json();
             if (template.error) {
                 throw new Error(template.error);
@@ -45,9 +55,22 @@ declare const Module: EmModule & any;
             seq++;
             templates[seq] = template;
             return new Promise<Handle>((resolve, reject) => {
-                mapping[seq] = new Drive(url, owner, name, token, stats, Module);
+                mapping[seq] = new Drive(
+                    url,
+                    owner,
+                    name,
+                    token,
+                    stats,
+                    Module,
+                );
                 mapping[seq].onOpen((read, write, imageSize, preloadQueue) => {
-                    Module.sockdrive.onOpen(owner + "/" + name, read, write, imageSize, preloadQueue);
+                    Module.sockdrive.onOpen(
+                        owner + "/" + name,
+                        read,
+                        write,
+                        imageSize,
+                        preloadQueue,
+                    );
                     resolve(seq);
                 });
                 mapping[seq].onError((e) => {
@@ -55,11 +78,19 @@ declare const Module: EmModule & any;
                     reject(e);
                 });
                 mapping[seq].onPreloadProgress((restBytes) => {
-                    Module.sockdrive.onPreloadProgress(owner + "/" + name, restBytes);
+                    Module.sockdrive.onPreloadProgress(
+                        owner + "/" + name,
+                        restBytes,
+                    );
                 });
             });
         },
-        read: (handle: Handle, sector: number, buffer: Ptr, sync: boolean): Promise<number> | number => {
+        read: (
+            handle: Handle,
+            sector: number,
+            buffer: Ptr,
+            sync: boolean,
+        ): Promise<number> | number => {
             if (mapping[handle]) {
                 return mapping[handle].read(sector, buffer, sync);
             }

@@ -77,7 +77,8 @@ export class LRUMap {
     }
 
     assign(entries: any) {
-        let entry; let limit = this.limit || Number.MAX_VALUE;
+        let entry;
+        let limit = this.limit || Number.MAX_VALUE;
         this._keymap.clear();
         const it = entries[Symbol.iterator]();
         for (let itv = it.next(); !itv.done; itv = it.next()) {
@@ -170,7 +171,6 @@ function Entry(this: any, key: any, value: any) {
     this[OLDER] = undefined;
 }
 
-
 function EntryIterator(this: any, oldestEntry: any) {
     this.entry = oldestEntry;
 }
@@ -186,7 +186,6 @@ EntryIterator.prototype.next = function () {
         return { done: true, value: undefined };
     }
 };
-
 
 function KeyIterator(this: any, oldestEntry: any) {
     this.entry = oldestEntry;

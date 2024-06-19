@@ -22,14 +22,14 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"],
         fallback: {
-            'process/browser': require.resolve('process/browser'),
+            "process/browser": require.resolve("process/browser"),
             events: require.resolve("events/"),
             stream: require.resolve("stream-browserify"),
             buffer: require.resolve("buffer"),
         },
     },
     stats: {
-        errorDetails: true
+        errorDetails: true,
     },
     output: {
         filename: "[name].js",
@@ -45,11 +45,15 @@ module.exports = {
                             stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_HASH,
                         },
                         () => {
-                            compilation.updateAsset("sockdriveNative.js",
+                            compilation.updateAsset(
+                                "sockdriveNative.js",
                                 new sources.RawSource(
                                     "R\"'''(" +
-                                    compilation.getAsset("sockdriveNative.js").source.source() +
-                                    ")'''\""),
+                                        compilation
+                                            .getAsset("sockdriveNative.js")
+                                            .source.source() +
+                                        ")'''\"",
+                                ),
                             );
                         },
                     );
