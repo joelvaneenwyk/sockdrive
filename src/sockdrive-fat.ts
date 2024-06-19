@@ -7,8 +7,16 @@ import { EmModule, Stats as SockdriveStats } from "./sockdrive/types";
 export interface Driver {
     sectorSize: number;
     numSectors: number;
-    readSectors: (sector: number, dst: Uint8Array, cb: (error: Error | null, dst: Uint8Array) => void) => void;
-    writeSectors: (sector: number, src: Uint8Array, cb: (error: Error | null) => void) => void;
+    readSectors: (
+        sector: number,
+        dst: Uint8Array,
+        cb: (error: Error | null, dst: Uint8Array) => void,
+    ) => void;
+    writeSectors: (
+        sector: number,
+        src: Uint8Array,
+        cb: (error: Error | null) => void,
+    ) => void;
 }
 
 type Callback = (error: Error | null) => void;
@@ -19,14 +27,19 @@ export type FileDescriptor = number;
 export interface FileSystemApi {
     mkdir(path: string, cb: Callback): void;
     readdir(path: string, cb: CallbackT<string[]>): void;
-    open(path: string, flags: string | number, mode: number, cb: CallbackT<FileDescriptor>): void;
+    open(
+        path: string,
+        flags: string | number,
+        mode: number,
+        cb: CallbackT<FileDescriptor>,
+    ): void;
     read(
         fd: FileDescriptor,
         buf: Buffer,
         offset: number,
         length: number,
         pos: number | null,
-        cb: CallbackT<number>
+        cb: CallbackT<number>,
     ): void;
     write(
         fd: FileDescriptor,
@@ -34,7 +47,7 @@ export interface FileSystemApi {
         offset: number,
         length: number,
         pos: number | null,
-        cb: CallbackT<number>
+        cb: CallbackT<number>,
     ): void;
     fstat(fd: FileDescriptor, cb: CallbackT<Stats>): void;
     close(fd: FileDescriptor, cb: Callback): void;
@@ -50,7 +63,7 @@ export type CreateFileSystemApi = (
         uid?: number;
         gid?: number;
     },
-    event: (event: "ready" | "error", reason: Error | null) => void
+    event: (event: "ready" | "error", reason: Error | null) => void,
 ) => FileSystemApi;
 export type CreateSockdriveFileSystem = typeof createSockdriveFileSystem;
 
@@ -81,11 +94,37 @@ export class FileSystem {
     fopen(path: string, flags: string | number, mode: number) {
         return this.promisify<FileDescriptor>(this.fs.open, path, flags, mode);
     }
-    fread(fd: FileDescriptor, buf: Uint8Array, offset: number, length: number, pos: number | null) {
-        return this.promisify<number>(this.fs.read, fd, typedarrayToBuffer(buf), offset, length, pos);
+    fread(
+        fd: FileDescriptor,
+        buf: Uint8Array,
+        offset: number,
+        length: number,
+        pos: number | null,
+    ) {
+        return this.promisify<number>(
+            this.fs.read,
+            fd,
+            typedarrayToBuffer(buf),
+            offset,
+            length,
+            pos,
+        );
     }
-    fwrite(fd: FileDescriptor, buf: Uint8Array, offset: number, length: number, pos: number | null) {
-        return this.promisify<number>(this.fs.write, fd, typedarrayToBuffer(buf), offset, length, pos);
+    fwrite(
+        fd: FileDescriptor,
+        buf: Uint8Array,
+        offset: number,
+        length: number,
+        pos: number | null,
+    ) {
+        return this.promisify<number>(
+            this.fs.write,
+            fd,
+            typedarrayToBuffer(buf),
+            offset,
+            length,
+            pos,
+        );
     }
     fstat(fd: FileDescriptor) {
         return this.promisify<Stats>(this.fs.fstat, fd);
@@ -96,13 +135,15 @@ export class FileSystem {
 
     // helpers
     async stat(path: string) {
-        const fd: number | null = await this.fopen(path, "\\r", 0o666).catch((e: Error & { code: string }) => {
-            if (e.code === "NOENT") {
-                return null;
-            }
+        const fd: number | null = await this.fopen(path, "\\r", 0o666).catch(
+            (e: Error & { code: string }) => {
+                if (e.code === "NOENT") {
+                    return null;
+                }
 
-            throw e;
-        });
+                throw e;
+            },
+        );
         if (fd === null) {
             return null;
         }
@@ -149,14 +190,16 @@ export interface StatsBase<T> {
     birthtime: Date;
 }
 
-export interface Stats extends StatsBase<number> { }
+export interface Stats extends StatsBase<number> {}
 
-export async function createSockdriveFileSystem(endpoint: string,
-                                                ownerId: string,
-                                                driveId: string,
-                                                token: string,
-                                                onOpen: (read: boolean, write: boolean) => void = () => { },
-                                                onError: (e: Error) => void = () => { }) {
+export async function createSockdriveFileSystem(
+    endpoint: string,
+    ownerId: string,
+    driveId: string,
+    token: string,
+    onOpen: (read: boolean, write: boolean) => void = () => {},
+    onError: (e: Error) => void = () => {},
+) {
     const stats: SockdriveStats = {
         read: 0,
         write: 0,
@@ -180,28 +223,43 @@ export async function createSockdriveFileSystem(endpoint: string,
             const driver: Driver = {
                 sectorSize,
                 numSectors: imageSize / sectorSize,
-                readSectors: function(start, dst, cb) {
+                readSectors: function (start, dst, cb) {
                     (async () => {
                         start += MBR_OFFSET;
                         // TODO we can avoid copying in dst.set
                         for (let i = 0; i < dst.length / sectorSize; ++i) {
                             if (drive?.read(start + i, 0, true) !== 0) {
-                                const readCode = await drive?.read(start + i, 0, false);
+                                const readCode = await drive?.read(
+                                    start + i,
+                                    0,
+                                    false,
+                                );
                                 if (readCode !== 0) {
-                                    cb(new Error("Read error, code: " + readCode), dst);
+                                    cb(
+                                        new Error(
+                                            "Read error, code: " + readCode,
+                                        ),
+                                        dst,
+                                    );
                                     return;
                                 }
                             }
-                            dst.set(module.HEAPU8.slice(0, sectorSize), i * sectorSize);
+                            dst.set(
+                                module.HEAPU8.slice(0, sectorSize),
+                                i * sectorSize,
+                            );
                         }
                     })()
                         .then(() => cb(null, dst))
                         .catch((e) => cb(e, dst));
                 },
-                writeSectors: function(start, data, cb) {
+                writeSectors: function (start, data, cb) {
                     start += MBR_OFFSET;
                     for (let i = 0; i < data.length / sectorSize; ++i) {
-                        module.HEAPU8.set(data.slice(i * sectorSize, (i + 1) * sectorSize), 0);
+                        module.HEAPU8.set(
+                            data.slice(i * sectorSize, (i + 1) * sectorSize),
+                            0,
+                        );
                         const writeCode = drive?.write(start + i, 0);
                         if (writeCode !== 0) {
                             cb(new Error("Write error, code: " + 0));
@@ -211,14 +269,18 @@ export async function createSockdriveFileSystem(endpoint: string,
                     cb(null);
                 },
             };
-            const fs = (createFileSystem as any as CreateFileSystemApi)(driver, {}, (ev, reason) => {
-                if (ev === "ready") {
-                    resolve(fs);
-                } else {
-                    console.error(ev, reason);
-                    reject(reason);
-                }
-            });
+            const fs = (createFileSystem as any as CreateFileSystemApi)(
+                driver,
+                {},
+                (ev, reason) => {
+                    if (ev === "ready") {
+                        resolve(fs);
+                    } else {
+                        console.error(ev, reason);
+                        reject(reason);
+                    }
+                },
+            );
             onOpen(read, write);
         });
         drive.onError(onError);
@@ -230,7 +292,6 @@ export async function createSockdriveFileSystem(endpoint: string,
         close: () => drive?.close(),
     };
 }
-
 
 (window as any).createSockdriveFileSystem = createSockdriveFileSystem;
 (window as any).createFileSystem = createFileSystem;

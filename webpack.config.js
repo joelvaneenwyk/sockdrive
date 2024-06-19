@@ -8,7 +8,7 @@ module.exports = {
     entry: {
         sockdriveFat: "./src/sockdrive-fat.ts",
         sockdriveNative: "./src/sockdrive-native.ts",
-        test: "./src/test/test.ts",
+        test: "./tests/sockdrive.test.ts",
     },
     module: {
         rules: [
@@ -40,11 +40,15 @@ module.exports = {
                             stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_HASH,
                         },
                         () => {
-                            compilation.updateAsset("sockdriveNative.js",
+                            compilation.updateAsset(
+                                "sockdriveNative.js",
                                 new sources.RawSource(
                                     "R\"'''(" +
-                                    compilation.getAsset("sockdriveNative.js").source.source() +
-                                    ")'''\""),
+                                        compilation
+                                            .getAsset("sockdriveNative.js")
+                                            .source.source() +
+                                        ")'''\"",
+                                ),
                             );
                         },
                     );
@@ -57,7 +61,7 @@ module.exports = {
         }),
         new ESLintPlugin({
             fix: true,
-            configType: "flat"
+            configType: "flat",
         }),
     ],
     optimization: {

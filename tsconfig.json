@@ -3,11 +3,7 @@
     "outDir": "dist/",
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [
-      "ES2020",
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ES2020", "ESNext", "DOM"],
     "esModuleInterop": true,
     "module": "NodeNext",
     "noFallthroughCasesInSwitch": true,

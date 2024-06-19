@@ -2,36 +2,44 @@ const S = require("./structs.js");
 const _xok = require("xok");
 
 // ponyfills for older node.js
-exports.allocBuffer = Buffer.alloc || function(len, val) {
-    const b = Buffer(len);
-    if (arguments.length > 1) b.fill(val);
-    return b;
-};
-exports.bufferFrom = Buffer.from || function(arg0, arg1) {
-    return (arguments.length > 1) ? Buffer(arg0, arg1) : Buffer(arg0);
-};
+exports.allocBuffer =
+    Buffer.alloc ||
+    function (len, val) {
+        const b = Buffer(len);
+        if (arguments.length > 1) b.fill(val);
+        return b;
+    };
+exports.bufferFrom =
+    Buffer.from ||
+    function (arg0, arg1) {
+        return arguments.length > 1 ? Buffer(arg0, arg1) : Buffer(arg0);
+    };
 
 // flag for WORKAROUND: https://github.com/tessel/beta/issues/380
-exports.workaroundTessel380 = !Buffer.from && function() {
-    const b = Buffer([0]);
-    const s = b.slice(0);
-    return ((s[0] = 0xFF) !== b[0]);
-}();
-
+exports.workaroundTessel380 =
+    !Buffer.from &&
+    (function () {
+        const b = Buffer([0]);
+        const s = b.slice(0);
+        return (s[0] = 0xff) !== b[0];
+    })();
 
 // WORKAROUND: https://github.com/tessel/beta/issues/433
 let oldslice;
 if (!Buffer.alloc && Buffer(5).slice(10).length < 0) {
-    oldslice = Buffer.prototype.slice, Buffer.prototype.slice = function(s, e) {
-        if (s > this.length) s = this.length;
-        // ~WORKAROUND: https://github.com/tessel/beta/issues/434
-        return (arguments.length > 1) ? oldslice.call(this, s, e) : oldslice.call(this, s);
-    };
+    (oldslice = Buffer.prototype.slice),
+        (Buffer.prototype.slice = function (s, e) {
+            if (s > this.length) s = this.length;
+            // ~WORKAROUND: https://github.com/tessel/beta/issues/434
+            return arguments.length > 1
+                ? oldslice.call(this, s, e)
+                : oldslice.call(this, s);
+        });
 }
 
-exports.absoluteSteps = function(path) {
+exports.absoluteSteps = function (path) {
     const steps = [];
-    path.split("/").forEach(function(str) {
+    path.split("/").forEach(function (str) {
         // NOTE: these should actually be fine, just wasteful…
         if (str === "..") steps.pop();
         else if (str && str !== ".") steps.push(str);
@@ -39,46 +47,83 @@ exports.absoluteSteps = function(path) {
     return steps.map(exports.longname);
 };
 
-exports.absolutePath = function(path) {
-    return "/"+exports.absoluteSteps(path).join("/");
+exports.absolutePath = function (path) {
+    return "/" + exports.absoluteSteps(path).join("/");
 };
 
-exports.parseFlags = function(flags) {
+exports.parseFlags = function (flags) {
     // read, write, append, create, truncate, exclusive
-    let info; let _dir; // NOTE: there might be more clever ways to "parse", but…
+    let info;
+    let _dir; // NOTE: there might be more clever ways to "parse", but…
     if (flags[0] === "\\") {
         // internal flag used internally to `fs.open` directories without `S.err.ISDIR()`
         flags = flags.slice(1);
         _dir = true;
     }
     switch (flags) {
-        case "r": info = { read: true, write: false, create: false }; break;
-        case "r+": info = { read: true, write: true, create: false }; break;
-        case "rs": info = { read: true, write: false, create: false, sync: true }; break;
-        case "rs+": info = { read: true, write: true, create: false, sync: true }; break;
-        case "w": info = { read: false, write: true, create: true, truncate: true }; break;
-        case "wx": info = { read: false, write: true, create: true, exclusive: true }; break;
-        case "w+": info = { read: true, write: true, create: true, truncate: true }; break;
-        case "wx+": info = { read: true, write: true, create: true, exclusive: true }; break;
-        case "a": info = { read: false, write: true, create: true, append: true }; break;
-        case "ax": info = { read: false, write: true, create: true, append: true, exclusive: true }; break;
-        case "a+": info = { read: true, write: true, create: true, append: true }; break;
-        case "ax+": info = { read: true, write: true, create: true, append: true, exclusive: true }; break;
-        default: throw Error("Uknown mode: "+flags); // TODO: throw as `S.err.INVAL`
+        case "r":
+            info = { read: true, write: false, create: false };
+            break;
+        case "r+":
+            info = { read: true, write: true, create: false };
+            break;
+        case "rs":
+            info = { read: true, write: false, create: false, sync: true };
+            break;
+        case "rs+":
+            info = { read: true, write: true, create: false, sync: true };
+            break;
+        case "w":
+            info = { read: false, write: true, create: true, truncate: true };
+            break;
+        case "wx":
+            info = { read: false, write: true, create: true, exclusive: true };
+            break;
+        case "w+":
+            info = { read: true, write: true, create: true, truncate: true };
+            break;
+        case "wx+":
+            info = { read: true, write: true, create: true, exclusive: true };
+            break;
+        case "a":
+            info = { read: false, write: true, create: true, append: true };
+            break;
+        case "ax":
+            info = {
+                read: false,
+                write: true,
+                create: true,
+                append: true,
+                exclusive: true,
+            };
+            break;
+        case "a+":
+            info = { read: true, write: true, create: true, append: true };
+            break;
+        case "ax+":
+            info = {
+                read: true,
+                write: true,
+                create: true,
+                append: true,
+                exclusive: true,
+            };
+            break;
+        default:
+            throw Error("Uknown mode: " + flags); // TODO: throw as `S.err.INVAL`
     }
     if (info.sync) throw Error("Mode not implemented."); // TODO: what would this require of us?
     if (_dir) info._openDir = true;
     return info;
 };
 
-
 // TODO: these are great candidates for special test coverage!
 const _snInvalid = /[^A-Z0-9$%'-_@~`!(){}^#&.]/g; // NOTE: '.' is not valid but we split it away
-exports.shortname = function(name) {
+exports.shortname = function (name) {
     let lossy = false;
     // TODO: support preservation of case for otherwise non-lossy name!
     name = name.toUpperCase().replace(/ /g, "").replace(/^\.+/, "");
-    name = name.replace(_snInvalid, function() {
+    name = name.replace(_snInvalid, function () {
         lossy = true;
         return "_";
     });
@@ -109,20 +154,27 @@ exports.shortname = function(name) {
 // TODO: OS X stores `shortname("._.Trashes")` as ['~1', 'TRA'] — should we?
 
 const _lnInvalid = /[^a-zA-Z0-9$%'-_@~`!(){}^#&.+,;=[\] ]/g;
-exports.longname = function(name) {
-    name = name.trim().replace(/\.+$/, "").replace(_lnInvalid, function(c) {
-        if (c.length > 1) throw Error("Internal problem: unexpected match length!");
-        if (c.charCodeAt(0) > 127) return c;
-        else throw Error("Invalid character "+JSON.stringify(c)+" in name.");
-        lossy = true;
-        return "_";
-    });
+exports.longname = function (name) {
+    name = name
+        .trim()
+        .replace(/\.+$/, "")
+        .replace(_lnInvalid, function (c) {
+            if (c.length > 1)
+                throw Error("Internal problem: unexpected match length!");
+            if (c.charCodeAt(0) > 127) return c;
+            else
+                throw Error(
+                    "Invalid character " + JSON.stringify(c) + " in name.",
+                );
+            lossy = true;
+            return "_";
+        });
     if (name.length > 255) throw Error("Name is too long.");
     return name;
 };
 
 function nameChkSum(sum, c) {
-    return ((sum & 1) ? 0x80 : 0) + (sum >>> 1) + c & 0xFF;
+    return ((sum & 1 ? 0x80 : 0) + (sum >>> 1) + c) & 0xff;
 }
 
 // WORKAROUND: https://github.com/tessel/beta/issues/335
@@ -134,12 +186,11 @@ function reduceBuffer(buf, start, end, fn, res) {
     return res;
 }
 
-exports.checksumName = function(buf, off) {
+exports.checksumName = function (buf, off) {
     off || (off = 0);
     const len = S.dirEntry.fields["Name"].size;
-    return reduceBuffer(buf, off, off+len, nameChkSum, 0);
+    return reduceBuffer(buf, off, off + len, nameChkSum, 0);
 };
-
 
 /* comparing C rounding trick from FAT spec with Math.ceil
 function tryBoth(d) {
@@ -158,27 +209,28 @@ function tryBoth(d) {
 });
 */
 
-exports.fmtHex = function(n, ff) {
-    return (1+ff+n).toString(16).slice(1);
+exports.fmtHex = function (n, ff) {
+    return (1 + ff + n).toString(16).slice(1);
 };
 
-exports.delayedCall = function(fn) {
+exports.delayedCall = function (fn) {
     if (!fn) throw Error("No function provided!"); // debug aid
     const ctx = this;
     const args = Array.prototype.slice.call(arguments, 1);
     // @caiiiycuk: TODO invesitgate, is setImmediate acually needed?
     // console.warn("setImmediate emulation, please remote it!");
     // setTimeout(function() {
-        fn.apply(ctx, args);
+    fn.apply(ctx, args);
     // }, 4);
 };
 
-exports.adjustedPos = function(vol, pos, bytes) {
+exports.adjustedPos = function (vol, pos, bytes) {
     const _pos = {
         chain: pos.chain,
         sector: pos.sector,
         offset: pos.offset + bytes,
-    }; const secSize = vol._sectorSize;
+    };
+    const secSize = vol._sectorSize;
     while (_pos.offset >= secSize) {
         _pos.sector += 1;
         _pos.offset -= secSize;
@@ -196,7 +248,7 @@ function log(level) {
 
     const now = Date.now();
     const diff = now - _prevDbg;
-    arguments[0] = ((diff < _thresh) ? " " : "") + diff.toFixed(0) + "ms";
+    arguments[0] = (diff < _thresh ? " " : "") + diff.toFixed(0) + "ms";
     console.log.apply(console, arguments);
     _prevDbg = now;
 }

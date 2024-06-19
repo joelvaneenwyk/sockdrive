@@ -1,7 +1,7 @@
 {
-    "recommendations": [
-        "ms-vscode.live-server",
-        "vitest.explorer",
-        "dbaeumer.vscode-eslint"
-    ]
+  "recommendations": [
+    "ms-vscode.live-server",
+    "vitest.explorer",
+    "dbaeumer.vscode-eslint"
+  ]
 }

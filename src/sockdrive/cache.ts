@@ -16,7 +16,9 @@ export class BlockCache implements Cache {
     constructor(sectorSize: number, aheadRange: number, memoryLimit: number) {
         this.aheadRange = aheadRange;
         this.sectorSize = sectorSize;
-        this.lru = new LRUMap(Math.floor(memoryLimit / (aheadRange * sectorSize)));
+        this.lru = new LRUMap(
+            Math.floor(memoryLimit / (aheadRange * sectorSize)),
+        );
     }
 
     public read(sector: number, originReadMode: boolean): Uint8Array | null {
@@ -27,7 +29,10 @@ export class BlockCache implements Cache {
                 return cached;
             } else {
                 const offset = sector - origin;
-                return cached.slice(offset * this.sectorSize, (offset + 1) * this.sectorSize);
+                return cached.slice(
+                    offset * this.sectorSize,
+                    (offset + 1) * this.sectorSize,
+                );
             }
         }
         return null;
@@ -47,7 +52,7 @@ export class BlockCache implements Cache {
     }
 
     public getOrigin(sector: number) {
-        return sector - sector % this.aheadRange;
+        return sector - (sector % this.aheadRange);
     }
 
     public memUsed() {

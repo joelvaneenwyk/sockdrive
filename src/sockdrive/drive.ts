@@ -5,10 +5,10 @@ const MAX_FRAME_SIZE = 1 * 1024 * 1024;
 const MEMORY_LIMIT = 64 * 1024 * 1024;
 
 interface Request {
-    type: 1 | 2, // read | write
-    sectors: number[],
-    buffer: Ptr | Uint8Array,
-    resolve: (result: number) => void,
+    type: 1 | 2; // read | write
+    sectors: number[];
+    buffer: Ptr | Uint8Array;
+    resolve: (result: number) => void;
 }
 
 export class Drive {
@@ -37,12 +37,25 @@ export class Drive {
     decodeBuffer: Uint8Array = new Uint8Array(0);
 
     cache: Cache | null = null;
-    cleanup = () => {/**/};
+    cleanup = () => {
+        /**/
+    };
 
-    openFn = (_read: boolean, _write: boolean, _size: number, _preloadQueue: number[],
-        _aheadRange: number) => {/**/};
-    preloadProgressFn = (_restBytes: number) => {/**/};
-    errorFn = (_e: Error) => {/**/};
+    openFn = (
+        _read: boolean,
+        _write: boolean,
+        _size: number,
+        _preloadQueue: number[],
+        _aheadRange: number,
+    ) => {
+        /**/
+    };
+    preloadProgressFn = (_restBytes: number) => {
+        /**/
+    };
+    errorFn = (_e: Error) => {
+        /**/
+    };
 
     retries: number;
 
@@ -52,14 +65,16 @@ export class Drive {
     originReadMode: boolean;
     readOnly = false;
 
-    public constructor(endpoint: string,
+    public constructor(
+        endpoint: string,
         owner: string,
         drive: string,
         token: string,
         stats: Stats,
         module: EmModule,
         preloadSectors = true,
-        originReadMode = false) {
+        originReadMode = false,
+    ) {
         this.sectorSize = 512;
         this.module = module;
         this.endpoint = endpoint;
@@ -81,8 +96,15 @@ export class Drive {
         this.errorFn = errorFn;
     }
 
-    public onOpen(openFn: (read: boolean, write: boolean, imageSize: number,
-        preloadQueue: number[], aheadRange: number) => void) {
+    public onOpen(
+        openFn: (
+            read: boolean,
+            write: boolean,
+            imageSize: number,
+            preloadQueue: number[],
+            aheadRange: number,
+        ) => void,
+    ) {
         this.openFn = openFn;
     }
 
@@ -98,26 +120,44 @@ export class Drive {
             const onOpen = () => {
                 const onInit = (event: { data: string }) => {
                     socket.removeEventListener("message", onInit);
-                    if (event.data.startsWith("write") || event.data.startsWith("read")) {
-                        const [mode, aheadRangeStr, sizeStr] = event.data.split(",");
+                    if (
+                        event.data.startsWith("write") ||
+                        event.data.startsWith("read")
+                    ) {
+                        const [mode, aheadRangeStr, sizeStr] =
+                            event.data.split(",");
                         const aheadRange = Number.parseInt(aheadRangeStr);
                         this.aheadRange = aheadRange;
                         this.aheadSize = aheadRange * this.sectorSize;
-                        this.maxRead = Math.floor(MAX_FRAME_SIZE / this.aheadSize);
+                        this.maxRead = Math.floor(
+                            MAX_FRAME_SIZE / this.aheadSize,
+                        );
 
                         const decodeBufferSize = this.aheadSize * this.maxRead;
-                        this.readBuffer = new Uint8Array(1 + 4 + this.maxRead * 4);
+                        this.readBuffer = new Uint8Array(
+                            1 + 4 + this.maxRead * 4,
+                        );
                         this.readAheadBuffer = new Uint8Array(decodeBufferSize);
                         this.decodeBuffer = new Uint8Array(decodeBufferSize);
-                        this.cache = new BlockCache(this.sectorSize, aheadRange, MEMORY_LIMIT);
+                        this.cache = new BlockCache(
+                            this.sectorSize,
+                            aheadRange,
+                            MEMORY_LIMIT,
+                        );
 
                         let preloadLength = 0;
                         let preloadPos = 0;
                         let preload: Uint8Array = new Uint8Array(0);
-                        const onPreloadMessage = (event: { data: ArrayBuffer }) => {
+                        const onPreloadMessage = (event: {
+                            data: ArrayBuffer;
+                        }) => {
                             let data = new Uint8Array(event.data);
                             if (preloadLength === 0) {
-                                preloadLength = data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
+                                preloadLength =
+                                    data[0] +
+                                    (data[1] << 8) +
+                                    (data[2] << 16) +
+                                    (data[3] << 24);
                                 preload = new Uint8Array(preloadLength - 4);
                                 data = data.slice(4);
                             }
@@ -128,42 +168,79 @@ export class Drive {
                             }
 
                             if (preloadPos > preload.length) {
-                                const error = new Error("Preload buffer is bigger then expected");
+                                const error = new Error(
+                                    "Preload buffer is bigger then expected",
+                                );
                                 this.errorFn(error);
                                 reject(error);
                             } else if (preloadPos == preload.length) {
                                 this.preloadQueue = [];
                                 if (this.preloadSectors) {
-                                    for (let i = 0; i < preload.length; i += 4) {
-                                        this.preloadQueue.push(preload[i] + (preload[i + 1] << 8) +
-                                            (preload[i + 2] << 16) + (preload[i + 3] << 24));
+                                    for (
+                                        let i = 0;
+                                        i < preload.length;
+                                        i += 4
+                                    ) {
+                                        this.preloadQueue.push(
+                                            preload[i] +
+                                                (preload[i + 1] << 8) +
+                                                (preload[i + 2] << 16) +
+                                                (preload[i + 3] << 24),
+                                        );
                                     }
                                 }
-                                socket.removeEventListener("message", onPreloadMessage);
+                                socket.removeEventListener(
+                                    "message",
+                                    onPreloadMessage,
+                                );
                                 socket.addEventListener("message", onMessage);
                                 this.readOnly = mode !== "write";
-                                this.openFn(true, !this.readOnly,
-                                    (Number.parseInt(sizeStr) ?? 2 * 1024 * 1024) * 1024,
+                                this.openFn(
+                                    true,
+                                    !this.readOnly,
+                                    (Number.parseInt(sizeStr) ??
+                                        2 * 1024 * 1024) * 1024,
                                     this.preloadQueue,
-                                    aheadRange);
+                                    aheadRange,
+                                );
                                 resolve(socket);
 
                                 if (this.preloadQueue.length > 0) {
-                                    if (this.preloadQueue.length * this.aheadSize > MEMORY_LIMIT) {
-                                        console.log("WARN! preloadQueue size is bigger then allowed",
-                                            this.preloadQueue.length * this.aheadSize / 1024 / 1024, ">",
-                                            MEMORY_LIMIT / 1024 / 1024);
-                                        this.preloadQueue = this.preloadQueue
-                                            .slice(0, Math.floor(MEMORY_LIMIT / this.aheadSize));
+                                    if (
+                                        this.preloadQueue.length *
+                                            this.aheadSize >
+                                        MEMORY_LIMIT
+                                    ) {
+                                        console.log(
+                                            "WARN! preloadQueue size is bigger then allowed",
+                                            (this.preloadQueue.length *
+                                                this.aheadSize) /
+                                                1024 /
+                                                1024,
+                                            ">",
+                                            MEMORY_LIMIT / 1024 / 1024,
+                                        );
+                                        this.preloadQueue =
+                                            this.preloadQueue.slice(
+                                                0,
+                                                Math.floor(
+                                                    MEMORY_LIMIT /
+                                                        this.aheadSize,
+                                                ),
+                                            );
                                     }
-                                    this.request = this.makeReadRequest(this.preloadQueue.shift()!);
+                                    this.request = this.makeReadRequest(
+                                        this.preloadQueue.shift()!,
+                                    );
                                     this.executeRequest(this.request);
                                 }
                             }
                         };
                         socket.addEventListener("message", onPreloadMessage);
                     } else {
-                        const error = new Error(event.data ?? "Unable to establish connection");
+                        const error = new Error(
+                            event.data ?? "Unable to establish connection",
+                        );
                         this.errorFn(error);
                         reject(error);
                     }
@@ -186,7 +263,7 @@ export class Drive {
             };
             socket.addEventListener("error", onError);
             socket.addEventListener("open", onOpen);
-            const cleanup = function() {
+            const cleanup = function () {
                 socket.removeEventListener("message", onMessage);
                 socket.removeEventListener("open", onOpen);
                 socket.removeEventListener("error", onError);
@@ -199,11 +276,18 @@ export class Drive {
         }
     }
 
-    private makeReadRequest(sector: number, buffer: number = -1, resolve: (res: number) => void = () => { }): Request {
+    private makeReadRequest(
+        sector: number,
+        buffer: number = -1,
+        resolve: (res: number) => void = () => {},
+    ): Request {
         const sectors: number[] = [sector];
         if (this.preloadQueue.length > 0) {
             this.preloadProgressFn(this.preloadQueue.length * this.aheadSize);
-            while (this.preloadQueue.length > 0 && sectors.length < this.maxRead) {
+            while (
+                this.preloadQueue.length > 0 &&
+                sectors.length < this.maxRead
+            ) {
                 const preload = this.preloadQueue.shift()!;
                 if (preload !== sector) {
                     sectors.push(preload);
@@ -224,7 +308,11 @@ export class Drive {
         };
     }
 
-    public read(sector: number, buffer: Ptr, sync: boolean): Promise<number> | number {
+    public read(
+        sector: number,
+        buffer: Ptr,
+        sync: boolean,
+    ): Promise<number> | number {
         const cached = this.cache!.read(sector, this.originReadMode);
         if (cached !== null) {
             this.stats.cacheHit++;
@@ -236,12 +324,18 @@ export class Drive {
             return new Promise<number>((resolve) => {
                 this.stats.cacheMiss++;
 
-                const request: Request = this.makeReadRequest(sector, buffer, resolve);
+                const request: Request = this.makeReadRequest(
+                    sector,
+                    buffer,
+                    resolve,
+                );
                 if (this.request !== null) {
                     if (this.pendingRequest === null) {
                         this.pendingRequest = request;
                     } else {
-                        console.error("New read request while old one is still processed");
+                        console.error(
+                            "New read request while old one is still processed",
+                        );
                         resolve(3);
                     }
                 } else {
@@ -257,7 +351,9 @@ export class Drive {
             type: 2,
             sectors: [sector],
             buffer: this.module.HEAPU8.slice(buffer, buffer + this.sectorSize),
-            resolve: () => {/**/},
+            resolve: () => {
+                /**/
+            },
         };
         this.cache!.write(sector, request.buffer as Uint8Array);
         this.executeRequest(request);
@@ -286,36 +382,42 @@ export class Drive {
                 this.readAheadPos = 0;
                 this.readAheadCompressed = 0;
                 this.readBuffer[0] = 1; // read
-                this.readBuffer[1] = sectors.length & 0xFF;
-                this.readBuffer[2] = (sectors.length >> 8) & 0xFF;
-                this.readBuffer[3] = (sectors.length >> 16) & 0xFF;
-                this.readBuffer[4] = (sectors.length >> 24) & 0xFF;
+                this.readBuffer[1] = sectors.length & 0xff;
+                this.readBuffer[2] = (sectors.length >> 8) & 0xff;
+                this.readBuffer[3] = (sectors.length >> 16) & 0xff;
+                this.readBuffer[4] = (sectors.length >> 24) & 0xff;
 
                 for (let i = 0; i < sectors.length; ++i) {
                     const origin = this.cache!.getOrigin(sectors[i]);
 
                     if (i > 0 && origin !== sectors[i]) {
-                        console.error("Assertion failed orign should equal to sector", origin, sectors[i]);
+                        console.error(
+                            "Assertion failed orign should equal to sector",
+                            origin,
+                            sectors[i],
+                        );
                         request.resolve(5);
                         return;
                     }
 
-                    this.readBuffer[5 + i * 4] = origin & 0xFF;
-                    this.readBuffer[5 + i * 4 + 1] = (origin >> 8) & 0xFF;
-                    this.readBuffer[5 + i * 4 + 2] = (origin >> 16) & 0xFF;
-                    this.readBuffer[5 + i * 4 + 3] = (origin >> 24) & 0xFF;
+                    this.readBuffer[5 + i * 4] = origin & 0xff;
+                    this.readBuffer[5 + i * 4 + 1] = (origin >> 8) & 0xff;
+                    this.readBuffer[5 + i * 4 + 2] = (origin >> 16) & 0xff;
+                    this.readBuffer[5 + i * 4 + 3] = (origin >> 24) & 0xff;
                 }
-                socket.send(this.readBuffer.slice(0, sectors.length * 4 + 5).buffer);
+                socket.send(
+                    this.readBuffer.slice(0, sectors.length * 4 + 5).buffer,
+                );
             } else if (this.readOnly) {
                 request.resolve(0);
             } else {
                 const { sectors, buffer, resolve } = request;
                 this.stats.write += this.sectorSize;
                 this.writeBuffer[0] = 2; // write
-                this.writeBuffer[1] = sectors[0] & 0xFF;
-                this.writeBuffer[2] = (sectors[0] >> 8) & 0xFF;
-                this.writeBuffer[3] = (sectors[0] >> 16) & 0xFF;
-                this.writeBuffer[4] = (sectors[0] >> 24) & 0xFF;
+                this.writeBuffer[1] = sectors[0] & 0xff;
+                this.writeBuffer[2] = (sectors[0] >> 8) & 0xff;
+                this.writeBuffer[3] = (sectors[0] >> 16) & 0xff;
+                this.writeBuffer[4] = (sectors[0] >> 24) & 0xff;
                 // TBD: maybe do not copy and send just slice ???
                 this.writeBuffer.set(buffer as Uint8Array, 5);
                 socket.send(this.writeBuffer.buffer);
@@ -334,14 +436,23 @@ export class Drive {
         } else if (event.data instanceof ArrayBuffer) {
             let data = new Uint8Array(event.data);
             if (this.readAheadCompressed === 0) {
-                this.readAheadCompressed = data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
+                this.readAheadCompressed =
+                    data[0] +
+                    (data[1] << 8) +
+                    (data[2] << 16) +
+                    (data[3] << 24);
                 data = data.slice(4);
             }
 
             const { sectors, buffer, resolve } = this.request;
             const restLength = this.readAheadCompressed - this.readAheadPos;
             if (data.byteLength > restLength || restLength < 0) {
-                console.error("wrong read payload length " + data.byteLength + " instead of " + restLength);
+                console.error(
+                    "wrong read payload length " +
+                        data.byteLength +
+                        " instead of " +
+                        restLength,
+                );
                 resolve(3);
             } else {
                 this.readAheadBuffer.set(data, this.readAheadPos);
@@ -351,40 +462,69 @@ export class Drive {
                 if (this.readAheadPos == this.readAheadCompressed) {
                     let decodeResult = expectedSize;
                     if (this.readAheadCompressed < expectedSize) {
-                        const result = decodeLz4(this.readAheadBuffer, this.decodeBuffer, 0, this.readAheadCompressed);
+                        const result = decodeLz4(
+                            this.readAheadBuffer,
+                            this.decodeBuffer,
+                            0,
+                            this.readAheadCompressed,
+                        );
                         if (result < 0) {
                             decodeResult = result;
                         } else {
-                            this.readAheadBuffer.set(this.decodeBuffer.slice(0, expectedSize), 0);
+                            this.readAheadBuffer.set(
+                                this.decodeBuffer.slice(0, expectedSize),
+                                0,
+                            );
                         }
                     }
 
                     if (decodeResult != expectedSize) {
-                        console.error("wrong decode result " + decodeResult + " should be " + expectedSize);
+                        console.error(
+                            "wrong decode result " +
+                                decodeResult +
+                                " should be " +
+                                expectedSize,
+                        );
                         resolve(4);
                     } else {
                         for (let i = 0; i < sectors.length; ++i) {
                             const aheadOffset = i * this.aheadSize;
                             const sector = sectors[i];
                             const origin = this.cache!.getOrigin(sector);
-                            this.cache!.create(origin,
-                                this.readAheadBuffer.slice(aheadOffset, aheadOffset + this.aheadSize));
-                            if (i == 0 && buffer as number >= 0) {
+                            this.cache!.create(
+                                origin,
+                                this.readAheadBuffer.slice(
+                                    aheadOffset,
+                                    aheadOffset + this.aheadSize,
+                                ),
+                            );
+                            if (i == 0 && (buffer as number) >= 0) {
                                 if (this.originReadMode && sector !== origin) {
-                                    throw new Error("Sector must be one of origins in originReadMode");
+                                    throw new Error(
+                                        "Sector must be one of origins in originReadMode",
+                                    );
                                 }
                                 const offset = sector - origin;
                                 // aheadOffset is zero
                                 const from = offset * this.sectorSize;
-                                this.module.HEAPU8.set(this.readAheadBuffer
-                                    .slice(from, from + (this.originReadMode ? this.aheadRange : 1) * this.sectorSize),
-                                    buffer as number);
+                                this.module.HEAPU8.set(
+                                    this.readAheadBuffer.slice(
+                                        from,
+                                        from +
+                                            (this.originReadMode
+                                                ? this.aheadRange
+                                                : 1) *
+                                                this.sectorSize,
+                                    ),
+                                    buffer as number,
+                                );
                             }
                         }
 
                         this.stats.cacheUsed = this.cache!.memUsed();
                         this.stats.read += this.readAheadCompressed;
-                        this.stats.readTotalTime += Date.now() - this.readStartedAt;
+                        this.stats.readTotalTime +=
+                            Date.now() - this.readStartedAt;
                         this.request = null;
                         resolve(0);
 
@@ -393,7 +533,9 @@ export class Drive {
                             this.pendingRequest = null;
                             this.executeRequest(this.request);
                         } else if (this.preloadQueue.length > 0) {
-                            this.request = this.makeReadRequest(this.preloadQueue.shift()!);
+                            this.request = this.makeReadRequest(
+                                this.preloadQueue.shift()!,
+                            );
                             this.executeRequest(this.request);
                         }
                     }
@@ -419,16 +561,23 @@ export class Drive {
  * @return {number} number of decoded bytes
  * @private
  */
-function decodeLz4(input: Uint8Array, output: Uint8Array, sIdx: number, eIdx: number) {
+function decodeLz4(
+    input: Uint8Array,
+    output: Uint8Array,
+    sIdx: number,
+    eIdx: number,
+) {
     sIdx = sIdx || 0;
-    eIdx = eIdx || (input.length - sIdx);
+    eIdx = eIdx || input.length - sIdx;
     // Process each sequence in the incoming data
-    let i; let n; let j;
-    for (i = sIdx, n = eIdx, j = 0; i < n;) {
+    let i;
+    let n;
+    let j;
+    for (i = sIdx, n = eIdx, j = 0; i < n; ) {
         const token = input[i++];
 
         // Literals
-        let literalsLength = (token >> 4);
+        let literalsLength = token >> 4;
         if (literalsLength > 0) {
             // length of literals
             let l = literalsLength + 240;
@@ -454,7 +603,7 @@ function decodeLz4(input: Uint8Array, output: Uint8Array, sIdx: number, eIdx: nu
         if (offset > j) return -(i - 2);
 
         // length of match copy
-        let matchLength = (token & 0xf);
+        let matchLength = token & 0xf;
         let l = matchLength + 240;
         while (l === 255) {
             l = input[i++];
@@ -468,4 +617,4 @@ function decodeLz4(input: Uint8Array, output: Uint8Array, sIdx: number, eIdx: nu
     }
 
     return j;
-};
+}
