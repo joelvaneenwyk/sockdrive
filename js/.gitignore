@@ -1,5 +1,8 @@
 dist/sockdrive*
 dist/test.js*
 dist/test/*.img
-node_modules
+node_modules/
 yarn-error.log
+yarn.lock
+package-lock.json
+.yarn/
