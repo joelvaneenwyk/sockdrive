@@ -1,4 +1,7 @@
 {
+  "files.associations": {
+    "*.json": "jsonc"
+  },
   "[typescript][typescriptreact][javascript][javascriptreact]": {
     "editor.formatOnPaste": false,
     "editor.formatOnSave": true,

@@ -1,6 +1,5 @@
 import { Drive } from "./drive";
 import { EmModule, Handle, Ptr, Stats } from "./types";
-
 export { Drive } from "./drive";
 
 interface Template {

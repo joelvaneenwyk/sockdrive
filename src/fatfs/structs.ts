@@ -139,7 +139,7 @@ export var entryIsE5Flag = 0x05;
 
 export var dirEntry_simple = _.struct([
     _.struct("Name", [_.char("filename", 8), _.char("extension", 3)]),
-    _.padTo(exports.dirEntry.size),
+    _.padTo(dirEntry.size),
     /*
     _.uint8('Attr_raw'),
     _.byte('NTRes', 1),
@@ -165,8 +165,7 @@ export var longDirEntry = _.struct([
     _.char16le("Name3", 4),
 ]);
 
-if (exports.longDirEntry.size !== exports.dirEntry.size)
-    throw Error("Structs ain't right!");
+if (longDirEntry.size !== dirEntry.size) throw Error("Structs ain't right!");
 
 export var fatField = {
     fat12: _.struct("Status", [
@@ -215,12 +214,11 @@ export var _I = {
     FREG: 0o100000,
 };
 
-export var _I.RWXU = exports._I.RUSR | exports._I.WUSR | exports._I.XUSR;
-export var _I.RWXG = exports._I.RGRP | exports._I.WGRP | exports._I.XGRP;
-export var _I.RWXO = exports._I.ROTH | exports._I.WOTH | exports._I.XOTH;
-export var _I._sss = exports._I.SUID | exports._I.SGID | exports._I.SVTX;
-export var _I._chmoddable =
-    exports._I.RWXU | exports._I.RWXG | exports._I.RWXO | exports._I._sss;
+export var RWXU = _I.RUSR | _I.WUSR | _I.XUSR;
+export var RWXG = _I.RGRP | _I.WGRP | _I.XGRP;
+export var RWXO = _I.ROTH | _I.WOTH | _I.XOTH;
+export var _sss = _I.SUID | _I.SGID | _I.SVTX;
+export var _chmoddable = RWXU | RWXG | RWXO | _sss;
 
 const _errors = {
     IO: "Input/output error",
@@ -243,7 +241,7 @@ const _errors = {
 export var err = {};
 Object.keys(_errors).forEach(function (sym) {
     const msg = _errors[sym];
-    exports.err[sym] = function () {
+    err[sym] = function () {
         const e = new Error(msg);
         e.code = sym;
         return e;

@@ -1,5 +1,5 @@
-import { BlockCache, Cache } from "cache";
-import { EmModule, Ptr, Stats } from "./types.ts";
+import { BlockCache, Cache } from "./cache";
+import { EmModule, Ptr, Stats } from "./types";
 
 const MAX_FRAME_SIZE = 1 * 1024 * 1024;
 const MEMORY_LIMIT = 64 * 1024 * 1024;

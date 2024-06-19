@@ -37,7 +37,7 @@ if (!Buffer.alloc && Buffer(5).slice(10).length < 0) {
         });
 }
 
-export var absoluteSteps = function (path: string) {
+export function absoluteSteps (path: string) {
     const steps: any[] = [];
     path.split("/").forEach(function (str: string) {
         // NOTE: these should actually be fine, just wasteful…
@@ -47,11 +47,11 @@ export var absoluteSteps = function (path: string) {
     return steps.map(longname);
 };
 
-export var absolutePath = function (path: any) {
+export function absolutePath (path: any) {
     return "/" + absoluteSteps(path).join("/");
 };
 
-export var parseFlags = function (flags: string | any[]) {
+export function parseFlags (flags: string | any[]) {
     // read, write, append, create, truncate, exclusive
     let info;
     let _dir; // NOTE: there might be more clever ways to "parse", but…
@@ -119,7 +119,7 @@ export var parseFlags = function (flags: string | any[]) {
 
 // TODO: these are great candidates for special test coverage!
 const _snInvalid = /[^A-Z0-9$%'-_@~`!(){}^#&.]/g; // NOTE: '.' is not valid but we split it away
-export var shortname = function (name: string) {
+export function shortname (name: string) {
     let lossy = false;
     // TODO: support preservation of case for otherwise non-lossy name!
     name = name.toUpperCase().replace(/ /g, "").replace(/^\.+/, "");
@@ -154,7 +154,7 @@ export var shortname = function (name: string) {
 // TODO: OS X stores `shortname("._.Trashes")` as ['~1', 'TRA'] — should we?
 
 const _lnInvalid = /[^a-zA-Z0-9$%'-_@~`!(){}^#&.+,;=[\] ]/g;
-export var longname = function (name: string) {
+export function longname (name: string) {
     name = name
         .trim()
         .replace(/\.+$/, "")
@@ -186,7 +186,7 @@ function reduceBuffer(buf: { [x: string]: any; }, start: any, end: number, fn: {
     return res;
 }
 
-export var checksumName = function (buf: any, off: number) {
+export function checksumName (buf: any, off: number) {
     off || (off = 0);
     const len = S.dirEntry.fields["Name"].size;
     return reduceBuffer(buf, off, off + len, nameChkSum, 0);
@@ -209,11 +209,11 @@ function tryBoth(d) {
 });
 */
 
-export var fmtHex = function (n: any, ff: number) {
+export function fmtHex (n: any, ff: number) {
     return (1 + ff + n).toString(16).slice(1);
 };
 
-export var delayedCall = function (fn: { apply: (arg0: any, arg1: any[]) => void; }) {
+export function delayedCall (fn: { apply: (arg0: any, arg1: any[]) => void; }) {
     if (!fn) throw Error("No function provided!"); // debug aid
     const ctx = this;
     const args = Array.prototype.slice.call(arguments, 1);
@@ -224,7 +224,7 @@ export var delayedCall = function (fn: { apply: (arg0: any, arg1: any[]) => void
     // }, 4);
 };
 
-export var adjustedPos = function (vol: { _sectorSize: any; }, pos: { chain: any; sector: any; offset: any; }, bytes: any) {
+export function adjustedPos (vol: { _sectorSize: any; }, pos: { chain: any; sector: any; offset: any; }, bytes: any) {
     const _pos = {
         chain: pos.chain,
         sector: pos.sector,

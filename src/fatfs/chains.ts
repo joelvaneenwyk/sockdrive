@@ -1,7 +1,11 @@
-const S = require("./structs.js");
-const _ = require("./helpers.js");
+import * as _ from "./helpers";
+import { err } from "./structs";
 
-function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) => any; }; _writeSectors: { bind: (arg0: any) => any; }; }) {
+function _baseChain(vol: {
+    _sectorSize: any;
+    _readSectors: { bind: (arg0: any) => any };
+    _writeSectors: { bind: (arg0: any) => any };
+}) {
     const chain = {};
 
     chain.sectorSize = vol._sectorSize;
@@ -18,7 +22,11 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
     chain._vol_writeSectors = vol._writeSectors.bind(vol);
 
     // cb(error, bytesRead, buffer)
-    chain.readFromPosition = function (targetPos: { offset: any; sector: any; }, buffer: string | any[], cb: (arg0: null, arg1: number, arg2: any) => void) {
+    chain.readFromPosition = function (
+        targetPos: { offset: any; sector: any },
+        buffer: string | any[],
+        cb: (arg0: null, arg1: number, arg2: any) => void,
+    ) {
         if (typeof targetPos === "number") targetPos = posFromOffset(targetPos);
         if (typeof buffer === "number") buffer = _.allocBuffer(buffer);
         /* NOTE: to keep our contract with the volume driver, we need to read on _full_ sector boundaries!
@@ -28,7 +36,18 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
             chain.readSectors(
                 targetPos.sector,
                 _.allocBuffer(chain.sectorSize),
-                function (e: any, d: { copy: (arg0: any, arg1: number, arg2: any, arg3: any) => void; length: number; }) {
+                function (
+                    e: any,
+                    d: {
+                        copy: (
+                            arg0: any,
+                            arg1: number,
+                            arg2: any,
+                            arg3: any,
+                        ) => void;
+                        length: number;
+                    },
+                ) {
                     if (e || !d) cb(e, 0, buffer);
                     else {
                         // copy preface into `buffer`
@@ -52,11 +71,15 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
                 ? buffer.slice(prefaceLen, -trailerLen)
                 : buffer.slice(prefaceLen);
             if (mainBuffer.length) {
-                chain.readSectors(mainSector, mainBuffer, function (e: any, d: any) {
-                    if (e || !d) cb(e, prefaceLen, buffer);
-                    else if (!trailerLen) cb(null, buffer.length, buffer);
-                    else readTrailer();
-                });
+                chain.readSectors(
+                    mainSector,
+                    mainBuffer,
+                    function (e: any, d: any) {
+                        if (e || !d) cb(e, prefaceLen, buffer);
+                        else if (!trailerLen) cb(null, buffer.length, buffer);
+                        else readTrailer();
+                    },
+                );
             } else readTrailer();
             function readTrailer() {
                 const trailerSector =
@@ -64,7 +87,17 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
                 chain.readSectors(
                     trailerSector,
                     _.allocBuffer(chain.sectorSize),
-                    function (e: any, d: { copy: (arg0: any, arg1: number, arg2: number, arg3: number) => void; }) {
+                    function (
+                        e: any,
+                        d: {
+                            copy: (
+                                arg0: any,
+                                arg1: number,
+                                arg2: number,
+                                arg3: number,
+                            ) => void;
+                        },
+                    ) {
                         if (e || !d) cb(e, buffer.length - trailerLen, buffer);
                         else {
                             d.copy(
@@ -82,7 +115,11 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
     };
 
     // cb(error)
-    chain.writeToPosition = function (targetPos: { offset: any; sector: any; }, data: string | any[], cb: (arg0: undefined) => void) {
+    chain.writeToPosition = function (
+        targetPos: { offset: any; sector: any },
+        data: string | any[],
+        cb: (arg0: undefined) => void,
+    ) {
         _.log(
             _.log.DBG,
             "WRITING",
@@ -133,7 +170,12 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
                 _modifySector(trailerSector, 0, trailerBuffer, cb);
             }
         }
-        function _modifySector(sec: any, off: number, data: { copy: (arg0: any, arg1: any) => void; }, cb: { (e: any): void; (arg0: any): any; }) {
+        function _modifySector(
+            sec: any,
+            off: number,
+            data: { copy: (arg0: any, arg1: any) => void },
+            cb: { (e: any): void; (arg0: any): any },
+        ) {
             chain.readSectors(
                 sec,
                 _.allocBuffer(chain.sectorSize),
@@ -150,7 +192,24 @@ function _baseChain(vol: { _sectorSize: any; _readSectors: { bind: (arg0: any) =
     return chain;
 }
 
-exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any, d: any) => void) => void; allocateInFAT: (arg0: any, arg1: (e: any, newCluster: any) => void) => void; storeToFAT: (arg0: any, arg1: string, arg2: { (e: any): any; (e: any): void; }) => void; _sectorsPerCluster: number; _firstSectorOfCluster: (arg0: any) => number; }, firstCluster: any, _parent: any) {
+exports.clusterChain = function (
+    vol: {
+        fetchFromFAT: (arg0: any, arg1: (e: any, d: any) => void) => void;
+        allocateInFAT: (
+            arg0: any,
+            arg1: (e: any, newCluster: any) => void,
+        ) => void;
+        storeToFAT: (
+            arg0: any,
+            arg1: string,
+            arg2: { (e: any): any; (e: any): void },
+        ) => void;
+        _sectorsPerCluster: number;
+        _firstSectorOfCluster: (arg0: any) => number;
+    },
+    firstCluster: any,
+    _parent: any,
+) {
     const chain = _baseChain(vol);
     const cache = [firstCluster];
 
@@ -160,23 +219,36 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
         return cache[cache.length - 1] === "eof";
     }
 
-    function extendCacheToInclude(i: number, cb: { (e: any, c: any): void; (e: any, c: any): any; (arg0: null, arg1: string | undefined): void; }) {
+    function extendCacheToInclude(
+        i: number,
+        cb: {
+            (e: any, c: any): void;
+            (e: any, c: any): any;
+            (arg0: null, arg1: string | undefined): void;
+        },
+    ) {
         // NOTE: may `cb()` before returning!
         if (i < cache.length) cb(null, cache[i]);
         else if (_cacheIsComplete()) cb(null, "eof");
         else {
-            vol.fetchFromFAT(cache[cache.length - 1], function (e: any, d: string) {
-                if (e) cb(e);
-                else if (typeof d === "string" && d !== "eof") cb(S.err.IO());
-                else {
-                    cache.push(d);
-                    extendCacheToInclude(i, cb);
-                }
-            });
+            vol.fetchFromFAT(
+                cache[cache.length - 1],
+                function (e: any, d: string) {
+                    if (e) cb(e);
+                    else if (typeof d === "string" && d !== "eof") cb(err.IO());
+                    else {
+                        cache.push(d);
+                        extendCacheToInclude(i, cb);
+                    }
+                },
+            );
         }
     }
 
-    function expandChainToLength(clusterCount: number, cb: { (e: any): void; (arg0: undefined): void; }) {
+    function expandChainToLength(
+        clusterCount: number,
+        cb: { (e: any): void; (arg0: undefined): void },
+    ) {
         if (!_cacheIsComplete())
             throw Error("Must be called only when cache is complete!");
         else cache.pop(); // remove 'eof' entry until finished
@@ -184,17 +256,24 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
         function addCluster(clustersNeeded: number, lastCluster: any) {
             if (!clustersNeeded) cache.push("eof"), cb();
             else {
-                vol.allocateInFAT(lastCluster, function (e: any, newCluster: any) {
-                    if (e) cb(e);
-                    else {
-                        vol.storeToFAT(lastCluster, newCluster, function (e: any) {
-                            if (e) return cb(e);
+                vol.allocateInFAT(
+                    lastCluster,
+                    function (e: any, newCluster: any) {
+                        if (e) cb(e);
+                        else {
+                            vol.storeToFAT(
+                                lastCluster,
+                                newCluster,
+                                function (e: any) {
+                                    if (e) return cb(e);
 
-                            cache.push(newCluster);
-                            addCluster(clustersNeeded - 1, newCluster);
-                        });
-                    }
-                });
+                                    cache.push(newCluster);
+                                    addCluster(clustersNeeded - 1, newCluster);
+                                },
+                            );
+                        }
+                    },
+                );
             }
         }
         addCluster(clusterCount - cache.length, cache[cache.length - 1]);
@@ -220,7 +299,26 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
     }
 
     // [{firstSector,numSectors},{firstSector,numSectors},…]
-    function determineSectorGroups(sectorIdx: number, numSectors: number, alloc: boolean, cb: { (e: any, groups: any, complete: any): void; (e: any, groups: any): void; (arg0: null, arg1: { _nextCluster: any; firstSector: any; numSectors: number; }[] | undefined, arg2: boolean | undefined): void; }) {
+    function determineSectorGroups(
+        sectorIdx: number,
+        numSectors: number,
+        alloc: boolean,
+        cb: {
+            (e: any, groups: any, complete: any): void;
+            (e: any, groups: any): void;
+            (
+                arg0: null,
+                arg1:
+                    | {
+                          _nextCluster: any;
+                          firstSector: any;
+                          numSectors: number;
+                      }[]
+                    | undefined,
+                arg2: boolean | undefined,
+            ): void;
+        },
+    ) {
         let sectorOffset = sectorIdx % vol._sectorsPerCluster;
         const clusterIdx = (sectorIdx - sectorOffset) / vol._sectorsPerCluster;
         const numClusters = Math.ceil(
@@ -265,7 +363,11 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
         }
     }
 
-    chain.readSectors = function (i: any, dest: string | any[], cb: (arg0: null, arg1: undefined) => void) {
+    chain.readSectors = function (
+        i: any,
+        dest: string | any[],
+        cb: (arg0: null, arg1: undefined) => void,
+    ) {
         let groupOffset = 0;
         let groupsPending: number;
         determineSectorGroups(
@@ -276,7 +378,10 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
                 if (e) cb(e);
                 else if (!complete) (groupsPending = -1), _pastEOF(cb);
                 else if ((groupsPending = groups.length)) {
-                    const process = (group: { numSectors: number; firstSector: any; }) =>
+                    const process = (group: {
+                        numSectors: number;
+                        firstSector: any;
+                    }) =>
                         new Promise((resolve) => {
                             const groupLength =
                                 group.numSectors * chain.sectorSize;
@@ -308,7 +413,11 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
     };
 
     // TODO: does this handle NOSPC condition?
-    chain.writeSectors = function (i: any, data: string | any[], cb: (arg0: undefined) => void) {
+    chain.writeSectors = function (
+        i: any,
+        data: string | any[],
+        cb: (arg0: undefined) => void,
+    ) {
         let groupOffset = 0;
         let groupsPending: number;
         determineSectorGroups(
@@ -318,7 +427,10 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
             function (e: any, groups: string | any[]) {
                 if (e) cb(e);
                 else if ((groupsPending = groups.length)) {
-                    const process = (group: { numSectors: number; firstSector: any; }) =>
+                    const process = (group: {
+                        numSectors: number;
+                        firstSector: any;
+                    }) =>
                         new Promise((resolve) => {
                             const groupLength =
                                 group.numSectors * chain.sectorSize;
@@ -348,7 +460,10 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
         );
     };
 
-    chain.truncate = function (numSectors: number, cb: (arg0: undefined) => void) {
+    chain.truncate = function (
+        numSectors: number,
+        cb: (arg0: undefined) => void,
+    ) {
         extendCacheToInclude(Infinity, function (e: any, c: any) {
             if (e) return cb(e);
 
@@ -371,7 +486,11 @@ exports.clusterChain = function (vol: { fetchFromFAT: (arg0: any, arg1: (e: any,
     return chain;
 };
 
-exports.sectorChain = function (vol: any, firstSector: any, numSectors: number) {
+exports.sectorChain = function (
+    vol: any,
+    firstSector: any,
+    numSectors: number,
+) {
     const chain = _baseChain(vol);
 
     chain.firstSector = firstSector;
@@ -384,11 +503,11 @@ exports.sectorChain = function (vol: any, firstSector: any, numSectors: number) 
 
     chain.writeSectors = function (i: number, data: any, cb: any) {
         if (i < numSectors) chain._vol_writeSectors(firstSector + i, data, cb);
-        else _.delayedCall(cb, S.err.NOSPC());
+        else _.delayedCall(cb, err.NOSPC());
     };
 
     chain.truncate = function (i: any, cb: any) {
-        _.delayedCall(cb, S.err.INVAL());
+        _.delayedCall(cb, err.INVAL());
     };
 
     chain.toJSON = function () {

@@ -1,20 +1,19 @@
-const S = require("./structs.js");
-const _ = require("./helpers.js");
+import * as _ from "./helpers";
 
 const dir = exports;
 
-export function iterator(dirChain, opts) {
+export function iterator(dirChain: { readSectors: (arg0: any, arg1: Buffer, arg2: (e: any, d: any) => any) => any; sectorSize: number; }, opts: { includeFree?: any; }) {
     opts || (opts = {});
 
     const cache = { buffer: null, n: null };
-    function getSectorBuffer(n, cb) {
+    function getSectorBuffer(n: number | null, cb: { (e: any, buf: any): any; (arg0: null, arg1: null | undefined): void; }) {
         if (cache.n === n) cb(null, cache.buffer);
         else {
             (cache.n = cache.buffer = null),
                 dirChain.readSectors(
                     n,
                     _.allocBuffer(dirChain.sectorSize),
-                    function (e, d) {
+                    function (e: any, d: null) {
                         if (e) cb(e);
                         else if (!d) return cb(null, null);
                         else {
@@ -29,14 +28,14 @@ export function iterator(dirChain, opts) {
 
     let secIdx = 0;
     const off = { bytes: 0 };
-    let long = null;
-    function getNextEntry(cb) {
+    let long: { sum: any; _rem: any; _arr: any; name: any; } | null = null;
+    function getNextEntry(cb: (arg0: null, arg1: { _free: boolean; _pos: { chain: any; sector: number; offset: number; }; } | null | undefined, arg2: { chain: any; sector: number; offset: number; } | undefined) => any) {
         if (off.bytes >= dirChain.sectorSize) {
             secIdx += 1;
             off.bytes -= dirChain.sectorSize;
         }
         const entryPos = { chain: dirChain, sector: secIdx, offset: off.bytes };
-        getSectorBuffer(secIdx, function (e, buf) {
+        getSectorBuffer(secIdx, function (e: any, buf: string | any[]) {
             if (e) return cb(S.err.IO());
             else if (!buf) return cb(null, null, entryPos);
 
@@ -133,22 +132,22 @@ export function iterator(dirChain, opts) {
         });
     }
 
-    function iter(cb) {
+    function iter(cb: any) {
         getNextEntry(cb);
         return iter; // TODO: previous value can't be re-used, so why make caller re-assign?
     }
     return iter;
-};
+}
 
-function _updateEntry(vol, entry, newStats) {
+function _updateEntry(vol: { opts: { modmode: number; }; }, entry: { [x: string]: number; Name?: { filename: string; extension: string | undefined; _lossy: boolean; basis?: undefined; lossy?: undefined; } | { basis: (string | undefined)[]; lossy: boolean; filename?: undefined; extension?: undefined; _lossy?: undefined; } | { filename: any; extension: string; }; Attr: any; _name?: any; _size?: any; FileSize?: any; FstClusLO?: any; FstClusHI?: any; _firstCluster?: any; }, newStats: { firstCluster: any; _touch?: boolean; ctime: any; size?: any; archive?: any; atime?: any; mtime?: any; mode?: any; }) {
     if ("size" in newStats) entry._size = entry.FileSize = newStats.size;
 
     if ("_touch" in newStats)
         newStats.archive = newStats.atime = newStats.mtime = true;
     if ("archive" in newStats) entry.Attr.archive = true; // TODO: also via newStats.mode?
 
-    let _now;
-    function applyDate(d, prefix, timeToo, tenthToo) {
+    let _now: Date;
+    function applyDate(d: boolean, prefix: string, timeToo: boolean | undefined, tenthToo: boolean | undefined) {
         if (d === true) d = _now || (_now = new Date());
         entry[prefix + "Date"] = {
             year: d.getFullYear() - 1980,
@@ -200,7 +199,7 @@ function _updateEntry(vol, entry, newStats) {
     return entry;
 }
 
-export function makeStat (vol, entry) {
+export function makeStat(vol: { _sectorsPerCluster: number; _sectorSize: number; opts: { modmode: number; umask: number; uid: any; gid: any; }; }, entry: { [x: string]: number; Attr: any; FileSize?: any; }) {
     const stats = {}; // TODO: return an actual `instanceof fs.Stat` somehow?
 
     stats.isFile = function () {
@@ -250,7 +249,7 @@ export function makeStat (vol, entry) {
     stats.uid = vol.opts.uid;
     stats.gid = vol.opts.gid;
 
-    function extractDate(prefix) {
+    function extractDate(prefix: string) {
         const date = entry[prefix + "Date"];
         const time = entry[prefix + "Time"] || {
             hours: 0,
@@ -283,9 +282,9 @@ export function makeStat (vol, entry) {
     };
 
     return stats;
-};
+}
 
-dir.init = function (vol, dirInfo, cb) {
+export function init(vol: { _sectorsPerCluster: number; }, dirInfo: { chain: any; parent: { chain: { firstCluster: any; }; }; }, cb: any) {
     const dirChain = dirInfo.chain;
     const isRootDir = "numSectors" in dirChain; // HACK: all others would be a clusterChain
     const initialCluster = _.allocBuffer(
@@ -293,7 +292,7 @@ dir.init = function (vol, dirInfo, cb) {
     );
     const entriesOffset = { bytes: 0 };
     initialCluster.fill(0);
-    function writeEntry(name, clusterNum) {
+    function writeEntry(name: string | any[], clusterNum: any) {
         while (name.length < 8) name += " ";
         S.dirEntry.bytesFromValue(
             _updateEntry(
@@ -315,13 +314,13 @@ dir.init = function (vol, dirInfo, cb) {
     dirChain.writeToPosition(0, initialCluster, cb);
 };
 
-dir.addFile = function (vol, dirChain, entryInfo, opts, cb) {
+export function addFile (vol: { allocateInFAT?: any; chainForCluster?: any; _sectorSize?: any; }, dirChain: { firstCluster: any; toJSON: () => any; writeToPosition: (arg0: any, arg1: Buffer, arg2: (e: any) => void) => void; }, entryInfo: { name: any; tail: string; target: { chain: any; sector: any; offset: any; }; lastEntry: any; }, opts: { dir?: any; }, cb: (arg0: null, arg1: { Name: { filename: string; extension: string | undefined; _lossy: boolean; basis?: undefined; lossy?: undefined; } | { basis: (string | undefined)[]; lossy: boolean; filename?: undefined; extension?: undefined; _lossy?: undefined; }; Attr: { directory: any; }; _name: any; } | undefined, arg2: undefined) => void) {
     if (typeof opts === "function") {
         cb = opts;
         opts = {};
     }
     var name = entryInfo.name;
-    const entries = [];
+    const entries: { Ord: number; }[] | { Name?: { filename: string; extension: string | undefined; _lossy: boolean; basis?: undefined; lossy?: undefined; } | { basis: (string | undefined)[]; lossy: boolean; filename?: undefined; extension?: undefined; _lossy?: undefined; }; Attr?: { directory: any; }; _name?: any; Ord?: number; Name1?: any; Attr_raw?: any; Chksum?: null; Name2?: any; Name3?: any; }[] = [];
     let mainEntry;
     entries.push(
         (mainEntry = {
@@ -375,7 +374,7 @@ dir.addFile = function (vol, dirChain, entryInfo, opts, cb) {
         _.log(_.log.DBG, "Shortname amended to:", mainEntry.Name);
     }
 
-    vol.allocateInFAT(dirChain.firstCluster || 2, function (e, fileCluster) {
+    vol.allocateInFAT(dirChain.firstCluster || 2, function (e: any, fileCluster: any) {
         if (e) return cb(e);
 
         const nameBuf = S.dirEntry.fields["Name"].bytesFromValue(
@@ -418,7 +417,7 @@ dir.addFile = function (vol, dirChain, entryInfo, opts, cb) {
             "at",
             entryInfo.target,
         );
-        dirChain.writeToPosition(entryInfo.target, entriesData, function (e) {
+        dirChain.writeToPosition(entryInfo.target, entriesData, function (e: any) {
             // TODO: if we get error, what/should we clean up?
             if (e) cb(e);
             else
@@ -427,13 +426,13 @@ dir.addFile = function (vol, dirChain, entryInfo, opts, cb) {
     });
 };
 
-dir.findInDirectory = function (vol, dirChain, name, opts, cb) {
+export function findInDirectory (vol: any, dirChain: any, name: string, opts: { prepareForCreate: any; }, cb: (arg0: null, arg1: { tail: number; target: any; lastEntry: boolean; } | undefined) => void) {
     const matchName = name.toUpperCase();
     const tailName = opts.prepareForCreate ? _.shortname(name) : null;
     let maxTail = 0;
 
-    function processNext(next) {
-        next = next(function (e, d, entryPos) {
+    function processNext(next: (arg0: (e: any, d: any, entryPos: any) => any) => any) {
+        next = next(function (e: any, d: { _free: any; _name: string; _full: () => any; Name: { filename: any; extension: string | undefined; }; }, entryPos: any) {
             if (e) cb(e);
             else if (!d)
                 cb(S.err.NOENT(), {
@@ -469,7 +468,7 @@ dir.findInDirectory = function (vol, dirChain, name, opts, cb) {
     );
 };
 
-dir.updateEntry = function (vol, entry, newStats, cb) {
+export function updateEntry (vol: any, entry: { _pos: { chain: any; }; }, newStats: any, cb: any) {
     if (!entry._pos || !entry._pos.chain) throw Error("Entry source unknown!");
 
     const entryPos = entry._pos;
