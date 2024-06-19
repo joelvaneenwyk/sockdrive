@@ -6,9 +6,9 @@ module.exports = {
     devtool: "source-map",
     mode: "production",
     entry: {
-        sockdriveFat: "./src/sockdrive-fat.ts",
-        sockdriveNative: "./src/sockdrive-native.ts",
-        test: "./src/test/test.ts",
+        sockdriveFat: "./js/src/sockdrive-fat.ts",
+        sockdriveNative: "./js/src/sockdrive-native.ts",
+        test: "./js/src/test/test.ts",
     },
     module: {
         rules: [
