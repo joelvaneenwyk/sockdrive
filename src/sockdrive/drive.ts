@@ -39,10 +39,10 @@ export class Drive {
     cache: Cache | null = null;
     cleanup = () => {/**/};
 
-    openFn = (read: boolean, write: boolean, size: number, preloadQueue: number[],
-        aheadRange: number) => {/**/};
-    preloadProgressFn = (restBytes: number) => {/**/};
-    errorFn = (e: Error) => {/**/};
+    openFn = (_read: boolean, _write: boolean, _size: number, _preloadQueue: number[],
+        _aheadRange: number) => {/**/};
+    preloadProgressFn = (_restBytes: number) => {/**/};
+    errorFn = (_e: Error) => {/**/};
 
     retries: number;
 

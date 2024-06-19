@@ -15,7 +15,7 @@ export default tseslint.config(
 			globals: {
 				...globals.node,
 				...globals.browser,
-				...globals.es2022,
+				...globals.es2020,
 				...globals.builtin,
 				...globals.worker,
 				fetch: true,
@@ -54,7 +54,7 @@ export default tseslint.config(
 		}
 	},
 	{
-		files: ["src/test/**/*.ts"],
+		files: ["test/**/*.ts"],
 		languageOptions: {
 			globals: {
 				...globals.node,

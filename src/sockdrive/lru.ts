@@ -160,6 +160,7 @@ export class LRUMap {
             --this.size;
             return [entry.key, entry.value];
         }
+        return [];
     }
 }
 

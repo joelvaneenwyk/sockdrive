@@ -185,8 +185,8 @@ export async function createSockdriveFileSystem(endpoint: string,
                         start += MBR_OFFSET;
                         // TODO we can avoid copying in dst.set
                         for (let i = 0; i < dst.length / sectorSize; ++i) {
-                            if (drive.read(start + i, 0, true) !== 0) {
-                                const readCode = await drive.read(start + i, 0, false);
+                            if (drive?.read(start + i, 0, true) !== 0) {
+                                const readCode = await drive?.read(start + i, 0, false);
                                 if (readCode !== 0) {
                                     cb(new Error("Read error, code: " + readCode), dst);
                                     return;
@@ -202,7 +202,7 @@ export async function createSockdriveFileSystem(endpoint: string,
                     start += MBR_OFFSET;
                     for (let i = 0; i < data.length / sectorSize; ++i) {
                         module.HEAPU8.set(data.slice(i * sectorSize, (i + 1) * sectorSize), 0);
-                        const writeCode = drive.write(start + i, 0);
+                        const writeCode = drive?.write(start + i, 0);
                         if (writeCode !== 0) {
                             cb(new Error("Write error, code: " + 0));
                             return;

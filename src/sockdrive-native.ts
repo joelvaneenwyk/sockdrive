@@ -29,10 +29,10 @@ declare const Module: EmModule & any;
         onError: (e: Error) => {
             console.error(e);
         },
-        onOpen: (drive: string, read: boolean, write: boolean) => {
+        onOpen: (_drive: string, _read: boolean, _write: boolean) => {
             // noop
         },
-        onPreloadProgress: (dirve: string, restBytes: number) => {
+        onPreloadProgress: (_dirve: string, _restBytes: number) => {
             // noop
         },
         open: async (url: string, owner: string, name: string, token: string): Promise<Handle> => {

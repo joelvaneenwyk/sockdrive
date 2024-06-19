@@ -17,5 +17,8 @@
     "errorLens.codeLensEnabled": true,
     "errorLens.enabled": true,
     "livePreview.serverRoot": "dist",
-    "typescript.suggest.enabled": true
+    "typescript.suggest.enabled": true,
+    "testing.coverageToolbarEnabled": true,
+    "dart.updateDevTools": false,
+    "playwright.reuseBrowser": true
 }

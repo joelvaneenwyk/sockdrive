@@ -57,9 +57,7 @@ module.exports = {
         }),
         new ESLintPlugin({
             fix: true,
-            extensions: ["ts"],
-            useEslintrc: false,
-            overrideConfigFile: ".eslintrc.json",
+            configType: "flat"
         }),
     ],
     optimization: {
