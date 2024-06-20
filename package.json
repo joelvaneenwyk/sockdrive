@@ -18,6 +18,7 @@
     "xok": "^2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.1",
     "@types/chai": "^4.3.16",
     "@types/events": "^3",
     "@types/mocha": "^10",
@@ -32,8 +33,6 @@
     "mocha": "^10",
     "process": "^0.11",
     "ts-loader": "^9",
-    "ts-mocha": "^10.0.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5",
     "webpack": "^5",
     "webpack-cli": "^5"

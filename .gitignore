@@ -7,3 +7,7 @@ yarn.lock
 yarn-error.log
 .pnp.cjs
 .pnp.loader.mjs
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
