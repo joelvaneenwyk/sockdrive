@@ -8,7 +8,7 @@
   "scripts": {
     "build": "webpack",
     "test": "npm run build && npx playwright test",
-    "start": "npx http-server "
+    "start": "npx http-server ./dist"
   },
   "dependencies": {
     "buffer": "^6",
