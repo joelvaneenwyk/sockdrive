@@ -7,7 +7,8 @@
   "private": true,
   "scripts": {
     "build": "webpack",
-    "test": "npm run build && mocha dist/test.js"
+    "test": "npm run build && npx playwright test",
+    "start": "npx http-server "
   },
   "dependencies": {
     "buffer": "^6",
@@ -30,6 +31,8 @@
     "eslint": "<9",
     "eslint-webpack-plugin": "^4",
     "events": "^3",
+    "html-webpack-plugin": "^5.6.0",
+    "http-server": "^14.1.1",
     "mocha": "^10",
     "process": "^0.11",
     "ts-loader": "^9",

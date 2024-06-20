@@ -1,6 +1,7 @@
 const path = require("path");
 const { Compilation, sources, ProvidePlugin } = require("webpack");
 const ESLintPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
     devtool: "source-map",
@@ -8,7 +9,7 @@ module.exports = {
     entry: {
         sockdriveFat: "./src/sockdrive-fat.ts",
         sockdriveNative: "./src/sockdrive-native.ts",
-        test: "./tests/test.ts",
+        runTests: "./tests/run-tests.ts",
     },
     module: {
         rules: [
@@ -71,6 +72,9 @@ module.exports = {
             useEslintrc: false,
             overrideConfigFile: ".eslintrc.json",
         }),
+        new HtmlWebpackPlugin({
+            template: "tests/index.html"
+        })
     ],
     optimization: {
         minimize: true,
