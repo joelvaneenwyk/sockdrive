@@ -8,7 +8,7 @@ module.exports = {
     entry: {
         sockdriveFat: "./src/sockdrive-fat.ts",
         sockdriveNative: "./src/sockdrive-native.ts",
-        test: "./test/test.ts",
+        test: "./tests/test.ts",
     },
     module: {
         rules: [
