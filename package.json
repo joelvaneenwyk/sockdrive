@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "build": "webpack",
-    "test": "mocha src/test/test.ts"
+    "test": "npm run build && mocha dist/test.js"
   },
   "dependencies": {
     "buffer": "^6",
@@ -24,6 +24,7 @@
     "@types/node": "^20.14.6",
     "@typescript-eslint/eslint-plugin": "^7",
     "@typescript-eslint/parser": "^7",
+    "assert": "^2.1.0",
     "chai": "^5",
     "eslint": "<9",
     "eslint-webpack-plugin": "^4",
@@ -31,6 +32,8 @@
     "mocha": "^10",
     "process": "^0.11",
     "ts-loader": "^9",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5",
     "webpack": "^5",
     "webpack-cli": "^5"

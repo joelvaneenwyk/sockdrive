@@ -8,7 +8,7 @@ module.exports = {
     entry: {
         sockdriveFat: "./src/sockdrive-fat.ts",
         sockdriveNative: "./src/sockdrive-native.ts",
-        test: "./src/test/test.ts",
+        test: "./test/test.ts",
     },
     module: {
         rules: [
@@ -24,6 +24,7 @@ module.exports = {
         fallback: {
             "process/browser": require.resolve("process/browser"),
             events: require.resolve("events/"),
+            assert: require.resolve("assert/"),
             stream: require.resolve("stream-browserify"),
             buffer: require.resolve("buffer"),
         },
