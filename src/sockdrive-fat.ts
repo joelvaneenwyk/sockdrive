@@ -1,3 +1,4 @@
+// @ts-expect-error Missing types
 import { createFileSystem } from "./fatfs";
 
 const toBuffer = require("typedarray-to-buffer");
@@ -228,8 +229,8 @@ export async function createSockdriveFileSystem(
                         start += MBR_OFFSET;
                         // TODO we can avoid copying in dst.set
                         for (let i = 0; i < dst.length / sectorSize; ++i) {
-                            if (drive.read(start + i, 0, true) !== 0) {
-                                const readCode = await drive.read(
+                            if (drive?.read(start + i, 0, true) !== 0) {
+                                const readCode = await drive?.read(
                                     start + i,
                                     0,
                                     false,
@@ -260,7 +261,7 @@ export async function createSockdriveFileSystem(
                             data.slice(i * sectorSize, (i + 1) * sectorSize),
                             0,
                         );
-                        const writeCode = drive.write(start + i, 0);
+                        const writeCode = drive?.write(start + i, 0);
                         if (writeCode !== 0) {
                             cb(new Error("Write error, code: " + 0));
                             return;
