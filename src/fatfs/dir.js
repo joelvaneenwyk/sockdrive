@@ -3,6 +3,9 @@ const _ = require("./helpers.js");
 
 const dir = exports;
 
+const kEnableLongNames = true;
+const kAllowIncludeFree = false;
+
 dir.iterator = function (dirChain, opts) {
     opts || (opts = {});
 
@@ -330,7 +333,7 @@ dir.addFile = function (vol, dirChain, entryInfo, opts, cb) {
             _name: name,
         }),
     );
-    if (1 || mainEntry.Name._lossy) {
+    if (kEnableLongNames || mainEntry.Name._lossy) {
         // HACK: always write long names until `._lossy` is more useful!
         const workaroundTessel427 = "\uFFFF".length !== 1;
         if (workaroundTessel427)
@@ -465,7 +468,9 @@ dir.findInDirectory = function (vol, dirChain, name, opts, cb) {
         });
     }
     processNext(
-        dir.iterator(dirChain, { includeFree: 0 && opts.prepareForCreate }),
+        dir.iterator(dirChain, {
+            includeFree: kAllowIncludeFree && opts.prepareForCreate,
+        }),
     );
 };
 

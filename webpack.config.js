@@ -73,8 +73,8 @@ module.exports = {
             overrideConfigFile: ".eslintrc.json",
         }),
         new HtmlWebpackPlugin({
-            template: "tests/index.html"
-        })
+            template: "tests/index.html",
+        }),
     ],
     optimization: {
         minimize: true,

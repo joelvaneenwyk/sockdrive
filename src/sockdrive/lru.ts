@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 // This code is from https://github.com/rsms/js-lru
 
 /**
